@@ -30,7 +30,7 @@ This is reflected in the package structure, that follows the DDD concept of modu
 
 ### Domain
 
-Corresponds to the DD concept of _ubiquitous language_. Contains domain objects and application services, 
+Corresponds to the DDD concept of _ubiquitous language_. Contains domain objects and application services,
 performs validation logic and defines transaction boundaries.
 
 This would correspond to the Domain Model a the hexagonal architecture, with no runtime dependencies.
