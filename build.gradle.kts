@@ -13,6 +13,8 @@ subprojects {
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-reflect")
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
         configurations.all {
             resolutionStrategy {
                 force("com.fasterxml.jackson.core:jackson-core:2.13.3")

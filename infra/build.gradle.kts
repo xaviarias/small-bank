@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    project(":smallbank-domain")
     implementation("org.web3j:core:4.9.2")
     testImplementation("org.web3j:web3j-unit:4.9.2")
 }

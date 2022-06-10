@@ -1,8 +1,10 @@
 
-rootProject.name = "small-bank"
+rootProject.name = "smallbank"
 
+include("domain")
+include("infra")
 include("rest-api")
-include("dlt")
 
-project(":rest-api").name = "${rootProject.name}-rest-api"
-project(":dlt").name = "${rootProject.name}-dlt"
+project(":domain").name = "smallbank-domain"
+project(":infra").name = "smallbank-infra"
+project(":rest-api").name = "smallbank-rest-api"
