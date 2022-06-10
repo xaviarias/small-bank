@@ -29,6 +29,11 @@ subprojects {
                 force("org.ow2.asm:asm-commons:9.2")
                 force("org.ow2.asm:asm-util:9.2")
                 force("com.beust:klaxon:5.6")
+                exclude("org.apache.logging.log4j", "log4j-api")
+                exclude("org.apache.logging.log4j", "log4j-core")
+                exclude("org.apache.logging.log4j", "log4j-jul")
+                exclude("org.apache.logging.log4j", "log4j-slf4j-impl")
+                exclude("org.apache.logging.log4j", "log4j-to-slf4j")
             }
         }
     }
