@@ -8,8 +8,8 @@ import java.math.BigDecimal
  */
 interface AccountManagementService {
     fun create(customerId: CustomerId): Account
-    fun deposit(accountId: AccountId, amount: BigDecimal)
-    fun withdraw(accountId: AccountId, amount: BigDecimal)
-    fun balance(accountId: AccountId): BigDecimal
-    fun movements(accountId: AccountId): List<AccountMovement>
+    fun deposit(customerId: CustomerId, amount: BigDecimal)
+    fun withdraw(customerId: CustomerId, amount: BigDecimal)
+    fun balance(customerId: CustomerId): BigDecimal
+    fun movements(customerId: CustomerId): List<AccountMovement>
 }

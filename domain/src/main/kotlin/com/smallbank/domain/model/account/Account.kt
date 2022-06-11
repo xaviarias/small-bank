@@ -2,6 +2,7 @@ package com.smallbank.domain.model.account
 
 import com.smallbank.domain.model.customer.CustomerId
 import java.math.BigDecimal
+import java.util.*
 
 data class Account(
     val accountId: AccountId,
@@ -9,7 +10,8 @@ data class Account(
     val balance: BigDecimal
 )
 
-/**
- * The account id that can be a number or any other representation (e.g. address).
- */
-data class AccountId(val id: String)
+data class AccountId(val id: String) {
+    companion object {
+        fun create() = AccountId(UUID.randomUUID().toString())
+    }
+}
