@@ -1,6 +1,7 @@
 package com.smallbank.infra.ethereum.web3j
 
 import com.smallbank.infra.ethereum.ethGetBalance
+import com.smallbank.infra.ethereum.toWei
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.web3j.EVMTest
@@ -23,7 +24,7 @@ class DepositTest : CustomerTest() {
         Assertions.assertEquals(CUSTOMER_INITIAL_BALANCE, web3j.ethGetBalance(CUSTOMER_ADDRESS))
 
         // Deposit 1 ETH to the bank
-        val amount = Convert.toWei(1.toBigDecimal(), Convert.Unit.ETHER).toBigInteger()
+        val amount = 1.toWei(Convert.Unit.ETHER)
         val receipt = customerSmallBank.deposit(amount).send()
 
         val contractBalance = web3j.ethGetBalance(smallBank.contractAddress)
