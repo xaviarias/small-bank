@@ -17,11 +17,13 @@ contract SmallBank {
 
     /// @notice Deposit ether into bank, requires method is "payable"
     function deposit() public payable {
+        balances[msg.sender] += msg.value;
+        emit AccountDeposit(msg.sender, msg.value);
     }
 
     /// @notice Just reads balance of the account requesting, so "constant"
     /// @return The balance of the customer
     function balance() public view returns (uint) {
-        return 0;
+        return balances[msg.sender];
     }
 }
