@@ -11,6 +11,10 @@ repositories {
     maven { url = URI("https://dl.cloudsmith.io/public/consensys/quorum-mainnet-launcher/maven/") }
 }
 
+web3j {
+    generatedPackageName = "${group}.infra.ethereum.web3j"
+}
+
 dependencies {
     project(":smallbank-domain")
     testImplementation("org.web3j:web3j-unit:4.9.2")
