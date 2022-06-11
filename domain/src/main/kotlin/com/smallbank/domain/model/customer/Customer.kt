@@ -14,5 +14,6 @@ data class PersonalAddress(
     val streetName: String,
     val streetNumber: String,
     val postCode: String,
+    val city: String,
     val isoCountryCode: String
 )
