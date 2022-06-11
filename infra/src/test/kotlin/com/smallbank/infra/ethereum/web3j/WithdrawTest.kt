@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.web3j.EVMTest
 import org.web3j.NodeType
 import org.web3j.protocol.Web3j
+import org.web3j.protocol.exceptions.TransactionException
 import org.web3j.tx.TransactionManager
 import org.web3j.tx.gas.ContractGasProvider
 import org.web3j.utils.Convert
@@ -16,22 +17,22 @@ import java.math.BigInteger
 class WithdrawTest : CustomerTest() {
 
     @Test
-    fun `withdraw more than zero from an empty account should throw an exception`() {
+    fun `withdraw from an empty account should throw an exception`() {
         val amount = 1.toWei(Convert.Unit.ETHER)
 
-        Assertions.assertThrows(Exception::class.java) {
+        Assertions.assertThrows(TransactionException::class.java) {
             customerSmallBank.withdraw(amount).send()
         }
     }
 
     @Test
-    fun `ether balances should be updated after money withdrawal`(
+    fun `ether balances should be updated after withdrawal`(
         web3j: Web3j,
         transactionManager: TransactionManager,
         gasProvider: ContractGasProvider
     ) {
-        // Deposit 1 ETH to the bank
-        val amount = Convert.toWei(1.toBigDecimal(), Convert.Unit.ETHER).toBigInteger()
+        // Deposit and withdraw 1 ETH to the bank
+        val amount = 1.toWei(Convert.Unit.ETHER)
         val depositReceipt = customerSmallBank.deposit(amount).send()
         val withdrawReceipt = customerSmallBank.withdraw(amount).send()
 
@@ -39,9 +40,10 @@ class WithdrawTest : CustomerTest() {
         Assertions.assertEquals(BigInteger.ZERO, contractBalance)
 
         val totalGas = (depositReceipt.gasUsed + withdrawReceipt.gasUsed) *
-                gasProvider.getGasPrice("deposit")
+                gasProvider.getGasPrice("withdrawal")
 
-        val expectedBalance = CUSTOMER_INITIAL_BALANCE - (amount + totalGas)
+        // Balance should be the initial minus the gas costs
+        val expectedBalance = CUSTOMER_INITIAL_BALANCE - totalGas
         val customerBalance = web3j.ethGetBalance(CUSTOMER_ADDRESS)
         Assertions.assertEquals(expectedBalance, customerBalance)
     }
