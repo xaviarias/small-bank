@@ -1,5 +1,8 @@
 package com.smallbank.domain.model.customer
 
+/**
+ * Customer management business logic.
+ */
 internal class CustomerManagementServiceImpl(
     private val customerRepository: CustomerRepository
 ) : CustomerManagementService {
