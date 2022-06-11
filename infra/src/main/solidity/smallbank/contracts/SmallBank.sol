@@ -21,6 +21,11 @@ contract SmallBank {
         emit AccountDeposit(msg.sender, msg.value);
     }
 
+    /// @notice Withdraw ether from bank
+    function withdraw(uint withdrawAmount) public {
+        return 0;
+    }
+
     /// @notice Just reads balance of the account requesting, so "constant"
     /// @return The balance of the customer
     function balance() public view returns (uint) {
