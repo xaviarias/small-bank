@@ -12,7 +12,7 @@ class CreateTest : SmallBankTest() {
 
     @Test
     fun `contract owner should be initialized after creation`() {
-        Assertions.assertEquals(SMALLBANK_ADDRESS, smallBank.owner().send())
+        Assertions.assertEquals(SMALLBANK_ACCOUNT, smallBank.owner().send())
     }
 
     @Test
