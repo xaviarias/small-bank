@@ -6,8 +6,7 @@ import java.math.BigDecimal
 data class Account(
     val id: AccountId,
     val customerId: CustomerId,
-    val type: AccountType,
-    val balance: BigDecimal
+    val type: AccountType
 ) {
     /**
      * Lists the possible account types supported by the system.

@@ -2,7 +2,6 @@ package com.smallbank.infra.model.account
 
 import com.smallbank.domain.model.account.Account
 import com.smallbank.infra.model.customer.PersistentCustomer
-import java.math.BigDecimal
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
@@ -21,7 +20,5 @@ internal data class PersistentAccount(
     val customer: PersistentCustomer,
 
     @Enumerated(EnumType.STRING)
-    val type: Account.AccountType,
-
-    val balance: BigDecimal
+    val type: Account.AccountType
 )

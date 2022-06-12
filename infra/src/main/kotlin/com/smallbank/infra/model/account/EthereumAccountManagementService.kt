@@ -35,12 +35,7 @@ internal class EthereumAccountManagementService(
 
         val accountId = keyPair.publicKey.toHexString()
 
-        return Account(
-            AccountId(accountId),
-            customerId,
-            AccountType.ETHEREUM,
-            BigDecimal.ZERO
-        ).also {
+        return Account(AccountId(accountId), customerId, AccountType.ETHEREUM).also {
             accountRepository.save(it)
         }
     }
@@ -50,12 +45,7 @@ internal class EthereumAccountManagementService(
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
-        val receipt = smallBank.deposit(amount.toBigInteger()).send()
-        require(receipt.isStatusOK) { "Deposit failed for account: $accountId" }
-
-        val balance = balance(accountId)
-        val account = accountRepository.findById(accountId)
-        accountRepository.save(account.copy(balance = balance))
+        smallBank.deposit(amount.toBigInteger()).send()
     }
 
     override fun withdraw(accountId: AccountId, amount: BigDecimal) {
