@@ -8,7 +8,6 @@ import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.SmallBankConfiguration
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toWei
-import com.smallbank.infra.ethereum.web3j.CUSTOMER_PRIVATE_KEY
 import com.smallbank.infra.ethereum.web3j.SmallBank
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -96,9 +95,6 @@ class EthereumAccountManagementServiceTest {
     fun `deposit should make a smart contract deposit`() {
         val account = accountManagementService.create(customer.id)
 
-        keyVault.stub {
-            on { resolve(account.id.id) } doReturn Credentials.create(CUSTOMER_PRIVATE_KEY)
-        }
         accountRepository.stub {
             on { findByCustomer(customer.id) } doReturn listOf(account)
             on { findById(account.id) } doReturn account
@@ -115,5 +111,27 @@ class EthereumAccountManagementServiceTest {
 
         verify(smallBank).deposit(amount)
         verify(depositCall).send()
+    }
+
+    @Test
+    fun `withdraw should make a smart contract withdraw`() {
+        val account = accountManagementService.create(customer.id)
+
+        accountRepository.stub {
+            on { findByCustomer(customer.id) } doReturn listOf(account)
+            on { findById(account.id) } doReturn account
+        }
+
+        val withdrawCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
+        val amount = 1.toWei(Convert.Unit.ETHER)
+        smallBank.stub {
+            on { withdraw(amount) } doReturn withdrawCall
+        }
+
+        // Withdraw 1 ETH from the bank
+        accountManagementService.withdraw(account.id, amount.toBigDecimal())
+
+        verify(smallBank).withdraw(amount)
+        verify(withdrawCall).send()
     }
 }
