@@ -93,7 +93,7 @@ class EthereumAccountManagementServiceTest {
     }
 
     @Test
-    fun `deposit should make an Ethereum call`() {
+    fun `deposit should make an Ethereum call and update repository`() {
         val account = accountManagementService.create(customer.id)
 
         keyVault.stub {
@@ -120,6 +120,7 @@ class EthereumAccountManagementServiceTest {
         // Deposit 1 ETH to the bank
         accountManagementService.deposit(account.id, amount.toBigDecimal())
 
+        verify(accountRepository).save(account.copy(balance = amount.toBigDecimal()))
         verify(smallBank).deposit(amount)
         verify(depositCall).send()
     }
