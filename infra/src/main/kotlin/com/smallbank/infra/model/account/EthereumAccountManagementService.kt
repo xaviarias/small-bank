@@ -50,7 +50,12 @@ internal class EthereumAccountManagementService(
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
-        smallBank.deposit(amount.toBigInteger()).send()
+        val receipt = smallBank.deposit(amount.toBigInteger()).send()
+        require(receipt.isStatusOK) { "Deposit failed for account: $accountId" }
+
+        val balance = balance(accountId)
+        val account = accountRepository.findById(accountId)
+        accountRepository.save(account.copy(balance = balance))
     }
 
     override fun withdraw(accountId: AccountId, amount: BigDecimal) {

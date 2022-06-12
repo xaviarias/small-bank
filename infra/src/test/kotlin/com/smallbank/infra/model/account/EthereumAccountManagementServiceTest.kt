@@ -27,6 +27,7 @@ import org.web3j.crypto.Credentials
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.utils.Convert
+import java.math.BigInteger
 import java.util.UUID
 
 @SpringBootTest(
@@ -93,28 +94,33 @@ class EthereumAccountManagementServiceTest {
     }
 
     @Test
-    fun `deposit should make an Ethereum call and update repository`() {
+    fun `deposit should make a smart contract deposit and update account repository with new balance`() {
         val account = accountManagementService.create(customer.id)
 
         keyVault.stub {
-            on {
-                resolve(account.id.id)
-            } doReturn Credentials.create(CUSTOMER_PRIVATE_KEY)
+            on { resolve(account.id.id) } doReturn Credentials.create(CUSTOMER_PRIVATE_KEY)
         }
-
         accountRepository.stub {
-            on {
-                findByCustomer(customer.id)
-            } doReturn listOf(account)
+            on { findByCustomer(customer.id) } doReturn listOf(account)
+            on { findById(account.id) } doReturn account
         }
 
+        val depositReceipt = mock<TransactionReceipt> {
+            on { isStatusOK } doReturn true
+        }
+        val depositCall = mock<RemoteFunctionCall<TransactionReceipt>> {
+            on { send() } doReturn depositReceipt
+        }
         val amount = 1.toWei(Convert.Unit.ETHER)
-        val depositCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
-
         smallBank.stub {
-            on {
-                deposit(amount)
-            } doReturn depositCall
+            on { deposit(amount) } doReturn depositCall
+        }
+
+        val balanceCall = mock<RemoteFunctionCall<BigInteger>> {
+            on { send() } doReturn amount
+        }
+        smallBank.stub {
+            on { balance() } doReturn balanceCall
         }
 
         // Deposit 1 ETH to the bank
