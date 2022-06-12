@@ -1,28 +1,41 @@
 package com.smallbank.infra.model.customer
 
-import javax.persistence.*
+import com.smallbank.infra.model.account.PersistentAccount
+import javax.persistence.Access
+import javax.persistence.AccessType
+import javax.persistence.Embeddable
+import javax.persistence.Embedded
+import javax.persistence.Entity
+import javax.persistence.Id
+import javax.persistence.OneToMany
+import javax.persistence.Table
 
 @Entity
 @Table(name = "customers")
-data class PersistentCustomer(
+internal data class PersistentCustomer(
     @Id
     val id: String?,
+
     @Embedded
     val name: PersistentPersonalName,
+
     @Embedded
-    val address: PersistentPersonalAddress
+    val address: PersistentPersonalAddress,
+
+    @OneToMany(mappedBy = "customer")
+    val accounts: List<PersistentAccount>
 )
 
 @Embeddable
 @Access(AccessType.FIELD)
-data class PersistentPersonalName(
+internal data class PersistentPersonalName(
     val first: String,
     val last: String
 )
 
 @Embeddable
 @Access(AccessType.FIELD)
-data class PersistentPersonalAddress(
+internal data class PersistentPersonalAddress(
     val streetName: String,
     val streetNumber: String,
     val postCode: String,
