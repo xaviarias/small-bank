@@ -1,10 +1,16 @@
 package com.smallbank.domain.model.customer
 
+import java.security.Principal
+import javax.validation.constraints.Email
+
 data class Customer(
-    val id: CustomerId?,
+    val id: CustomerId,
+    @Email val email: String,
     val name: PersonalName,
     val address: PersonalAddress
-)
+) : Principal {
+    override fun getName() = id.id
+}
 
 data class CustomerId(val id: String)
 

@@ -2,16 +2,32 @@ package com.smallbank.domain.model.account
 
 import com.smallbank.domain.model.customer.CustomerId
 import java.math.BigDecimal
-import java.util.*
 
 data class Account(
-    val accountId: AccountId,
+    val id: AccountId,
     val customerId: CustomerId,
+    val type: AccountType,
     val balance: BigDecimal
-)
+) {
+    /**
+     * Lists the possible account types supported by the system.
+     */
+    enum class AccountType {
+        /**
+         * Only one Ethereum account per customer should be ensured.
+         */
+        ETHEREUM
+    }
+}
 
-data class AccountId(val id: String) {
-    companion object {
-        fun create() = AccountId(UUID.randomUUID().toString())
+data class AccountId(val id: String)
+
+data class AccountMovement(
+    val accountId: AccountId,
+    val type: MovementType,
+    val amount: BigDecimal
+) {
+    enum class MovementType {
+        DEPOSIT, WITHDRAW
     }
 }
