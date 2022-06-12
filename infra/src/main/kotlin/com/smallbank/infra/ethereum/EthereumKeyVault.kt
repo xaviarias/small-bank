@@ -1,10 +1,11 @@
 package com.smallbank.infra.ethereum
 
-import com.smallbank.domain.model.customer.CustomerId
+import org.web3j.crypto.Credentials
 
 /**
  * Customer key repository to store sensitive data externally.
  */
 internal interface EthereumKeyVault {
-    fun resolve(customerId: CustomerId): String?
+    fun store(credentials: Credentials)
+    fun resolve(account: String): Credentials?
 }

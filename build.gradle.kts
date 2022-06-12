@@ -15,10 +15,13 @@ subprojects {
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+        testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
         configurations.all {
             resolutionStrategy {
                 force("com.fasterxml.jackson.core:jackson-core:2.13.3")
                 force("org.junit.jupiter:junit-jupiter-api:5.8.2")
+                force("org.mockito:mockito-core:4.5.1")
+                force("org.mockito:mockito-junit-jupiter:4.5.1")
                 force("org.apache.logging.log4j:log4j-api:2.17.2")
                 force("ch.qos.logback:logback-classic:1.2.11")
                 force("org.slf4j:slf4j-api:1.7.36")

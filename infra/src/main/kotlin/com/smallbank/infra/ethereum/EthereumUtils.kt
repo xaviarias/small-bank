@@ -3,11 +3,15 @@ package com.smallbank.infra.ethereum
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.utils.Convert
-import org.web3j.utils.Numeric.cleanHexPrefix
+import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 internal fun String.hexToBigInt(): BigInteger {
-    return BigInteger(cleanHexPrefix(this), 16)
+    return BigInteger(Numeric.cleanHexPrefix(this), 16)
+}
+
+internal fun BigInteger.toHexString(): String {
+    return Numeric.encodeQuantity(this)
 }
 
 /**

@@ -22,6 +22,8 @@ web3j {
 dependencies {
     implementation(project(":smallbank-domain"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.web3j:web3j-unit:4.9.2")
-    testRuntimeOnly("com.h2database:h2:1.4.196")
+    testRuntimeOnly("com.h2database:h2:2.1.212")
 }
