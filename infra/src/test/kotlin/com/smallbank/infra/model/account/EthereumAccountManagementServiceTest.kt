@@ -1,5 +1,6 @@
 package com.smallbank.infra.model.account
 
+import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountManagementService
 import com.smallbank.domain.model.customer.Customer
 import com.smallbank.domain.model.customer.CustomerId
@@ -9,6 +10,7 @@ import com.smallbank.infra.SmallBankConfiguration
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toWei
 import com.smallbank.infra.ethereum.web3j.SmallBank
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.argumentCaptor
@@ -26,6 +28,7 @@ import org.web3j.crypto.Credentials
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.utils.Convert
+import java.math.BigInteger
 import java.util.UUID
 
 @SpringBootTest(
@@ -133,5 +136,22 @@ class EthereumAccountManagementServiceTest {
 
         verify(smallBank).withdraw(amount)
         verify(withdrawCall).send()
+    }
+
+    @Test
+    fun `balance should call the smart contract balance`() {
+        val amount = 1.toWei(Convert.Unit.ETHER)
+        val balanceCall = mock<RemoteFunctionCall<BigInteger>> {
+            on { send() } doReturn amount
+        }
+        smallBank.stub {
+            on { balance() } doReturn balanceCall
+        }
+
+        val balance = accountManagementService.balance(AccountId("0x0"))
+        Assertions.assertEquals(amount, balance.toBigInteger())
+
+        verify(smallBank).balance()
+        verify(balanceCall).send()
     }
 }
