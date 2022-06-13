@@ -5,27 +5,53 @@ import com.smallbank.domain.model.account.Account.AccountType
 import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountManagementService
 import com.smallbank.domain.model.account.AccountMovement
+import com.smallbank.domain.model.account.AccountMovement.MovementType
 import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toHexString
 import com.smallbank.infra.ethereum.web3j.SmallBank
+import com.smallbank.infra.ethereum.web3j.SmallBank.AccountDepositEventResponse
+import com.smallbank.infra.ethereum.web3j.SmallBank.AccountWithdrawalEventResponse
+import com.smallbank.infra.model.customer.JpaCustomerRepository
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.Keys
+import org.web3j.protocol.core.DefaultBlockParameterName
 import java.math.BigDecimal
 import java.security.SecureRandom
+import java.time.LocalDateTime
 import java.time.Period
+import java.util.UUID
+import javax.annotation.PostConstruct
 
 @Service
 @Qualifier("ethereum")
 internal class AccountManagementServiceImpl(
-    private val accountRepository: AccountRepository,
+    private val accountRepository: JpaAccountRepository,
+    private val customerRepository: JpaCustomerRepository,
+    private val movementRepository: JpaAccountMovementRepository,
     private val keyRepository: EthereumKeyVault,
     private val smallBank: SmallBank
 ) : AccountManagementService {
 
     private val random = SecureRandom()
+
+    @PostConstruct
+    fun subscribeToMovements() {
+        smallBank.accountDepositEventFlowable(
+            DefaultBlockParameterName.EARLIEST,
+            DefaultBlockParameterName.LATEST
+        ).subscribe {
+            movementRepository.save(it.toEntity(accountRepository))
+        }
+        smallBank.accountWithdrawalEventFlowable(
+            DefaultBlockParameterName.EARLIEST,
+            DefaultBlockParameterName.LATEST
+        ).subscribe {
+            movementRepository.save(it.toEntity(accountRepository))
+        }
+    }
 
     override fun create(customerId: CustomerId): Account {
         checkAlreadyExistingAccount(customerId)
@@ -34,14 +60,13 @@ internal class AccountManagementServiceImpl(
         keyRepository.store(Credentials.create(keyPair))
 
         val accountId = keyPair.publicKey.toHexString()
-
         return Account(AccountId(accountId), customerId, AccountType.ETHEREUM).also {
-            accountRepository.create(it)
+            accountRepository.save(it.toEntity(customerRepository, movementRepository))
         }
     }
 
     override fun list(customerId: CustomerId): List<Account> {
-        return accountRepository.findByCustomer(customerId)
+        return accountRepository.findByCustomerId(customerId.id).map { it.toPojo() }
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
@@ -58,13 +83,7 @@ internal class AccountManagementServiceImpl(
 
     // TODO Support date intervals
     override fun movements(accountId: AccountId, period: Period): List<AccountMovement> {
-//        val deposits = contract(customerId).accountDepositEventFlowable(
-//            DefaultBlockParameterName.EARLIEST,
-//            DefaultBlockParameterName.LATEST
-//        ).blockingIterable().map {
-//            AccountMovement(MovementType.DEPOSIT, it.amount.toBigDecimal())
-//        }
-        return listOf()
+        return movementRepository.findByAccountId(accountId.id).map { it.toPojo() }
     }
 
     /**
@@ -75,4 +94,24 @@ internal class AccountManagementServiceImpl(
             throw IllegalStateException("Already existing account for customer: $customerId")
         }
     }
+
+    private fun AccountDepositEventResponse.toEntity(
+        accountRepository: JpaAccountRepository
+    ) = PersistentAccountMovement(
+        id = UUID.randomUUID().toString(),
+        timestamp = LocalDateTime.now(),
+        account = accountRepository.findById(customer).orElseThrow(),
+        type = MovementType.DEPOSIT,
+        amount = amount.toBigDecimal()
+    )
+
+    private fun AccountWithdrawalEventResponse.toEntity(
+        accountRepository: JpaAccountRepository
+    ) = PersistentAccountMovement(
+        id = UUID.randomUUID().toString(),
+        timestamp = LocalDateTime.now(),
+        account = accountRepository.findById(customer).orElseThrow(),
+        type = MovementType.WITHDRAW,
+        amount = amount.toBigDecimal()
+    )
 }

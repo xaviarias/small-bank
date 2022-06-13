@@ -8,6 +8,7 @@ import javax.persistence.Enumerated
 import javax.persistence.FetchType
 import javax.persistence.Id
 import javax.persistence.ManyToOne
+import javax.persistence.OneToMany
 import javax.persistence.Table
 
 @Entity
@@ -20,5 +21,8 @@ internal data class PersistentAccount(
     val customer: PersistentCustomer,
 
     @Enumerated(EnumType.STRING)
-    val type: Account.AccountType
+    val type: Account.AccountType,
+
+    @OneToMany(mappedBy = "account")
+    val movements: List<PersistentAccountMovement>
 )

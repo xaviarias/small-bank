@@ -2,6 +2,7 @@ package com.smallbank.domain.model.account
 
 import com.smallbank.domain.model.customer.CustomerId
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class Account(
     val id: AccountId,
@@ -22,6 +23,8 @@ data class Account(
 data class AccountId(val id: String)
 
 data class AccountMovement(
+    val id: String,
+    val timestamp: LocalDateTime,
     val accountId: AccountId,
     val type: MovementType,
     val amount: BigDecimal

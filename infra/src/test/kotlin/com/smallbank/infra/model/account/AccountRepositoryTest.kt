@@ -22,6 +22,7 @@ open class AccountRepositoryTest {
 
     private lateinit var accountRepository: AccountRepository
     private lateinit var customerRepository: CustomerRepository
+    private lateinit var movementsRepository: JpaAccountMovementRepository
 
     @Autowired
     private lateinit var jpaAccountRepository: JpaAccountRepository
@@ -51,7 +52,9 @@ open class AccountRepositoryTest {
     @BeforeEach
     fun setUp() {
         accountRepository = AccountRepositoryImpl(
-            jpaAccountRepository, jpaCustomerRepository
+            jpaAccountRepository,
+            jpaCustomerRepository,
+            movementsRepository
         )
         customerRepository = CustomerRepositoryImpl(
             jpaCustomerRepository, jpaAccountRepository
