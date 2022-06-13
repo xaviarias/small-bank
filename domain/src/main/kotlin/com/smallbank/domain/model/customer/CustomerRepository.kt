@@ -5,11 +5,11 @@ package com.smallbank.domain.model.customer
  */
 interface CustomerRepository {
 
-    fun save(customer: Customer): Customer
+    fun create(customer: Customer): Customer
 
     fun update(customer: Customer): Customer
 
-    fun findById(customerId: CustomerId): Customer
+    fun findById(customerId: CustomerId): Customer?
 
     fun findAll(): List<Customer>
 }

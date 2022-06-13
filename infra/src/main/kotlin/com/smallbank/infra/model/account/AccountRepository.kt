@@ -4,13 +4,9 @@ import com.smallbank.domain.model.account.Account
 import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.customer.CustomerId
 
-interface JpaAccountRepository {
-
-    fun save(account: Account): Account
-
+internal interface AccountRepository {
+    fun create(account: Account): Account
     fun update(account: Account): Account
-
-    fun findById(accountId: AccountId): Account
-
+    fun findById(accountId: AccountId): Account?
     fun findByCustomer(customerId: CustomerId): List<Account>
 }

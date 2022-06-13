@@ -14,7 +14,7 @@ import javax.persistence.Table
 @Table(name = "accounts")
 internal data class PersistentAccount(
     @Id
-    val accountId: String,
+    val id: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
     val customer: PersistentCustomer,

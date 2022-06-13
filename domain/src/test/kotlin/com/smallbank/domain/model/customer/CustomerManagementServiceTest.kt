@@ -39,7 +39,7 @@ class CustomerManagementServiceTest {
     @Test
     fun `create should save a new customer in the repository`() {
         service.create(customer)
-        verify(repository).save(customer)
+        verify(repository).create(customer)
     }
 
     @Test

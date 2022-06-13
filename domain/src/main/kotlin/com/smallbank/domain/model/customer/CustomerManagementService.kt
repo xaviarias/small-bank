@@ -5,8 +5,8 @@ package com.smallbank.domain.model.customer
  */
 interface CustomerManagementService {
     fun create(customer: Customer): Customer
-    fun findById(customerId: CustomerId): Customer
+    fun findById(customerId: CustomerId): Customer?
 
-    // TODO Support pagination, this could grow big
+    // TODO Support pagination
     fun findAll(): List<Customer>
 }

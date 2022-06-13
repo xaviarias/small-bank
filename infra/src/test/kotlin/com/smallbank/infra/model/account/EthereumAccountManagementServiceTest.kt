@@ -43,16 +43,16 @@ class EthereumAccountManagementServiceTest {
 
     @Autowired
     @Qualifier("ethereum")
-    private lateinit var accountManagementService: AccountManagementService
+    private lateinit var service: AccountManagementService
 
     @MockBean
-    private lateinit var accountRepository: JpaAccountRepository
+    private lateinit var repository: AccountRepository
 
     @MockBean
     private lateinit var keyVault: EthereumKeyVault
 
     @MockBean
-    private lateinit var smallBank: SmallBank
+    private lateinit var contract: SmallBank
 
     private val customer = Customer(
         CustomerId(UUID.randomUUID().toString()),
@@ -69,72 +69,72 @@ class EthereumAccountManagementServiceTest {
 
     @Test
     fun `create account should save a new account and store the keys in the key vault`() {
-        val account = accountManagementService.create(customer.id)
+        val account = service.create(customer.id)
         val credentialsCaptor = argumentCaptor<Credentials>()
 
         verify(keyVault).store(credentialsCaptor.capture())
-        verify(accountRepository).save(account)
+        verify(repository).create(account)
     }
 
     @Test
     fun `create more than one account per customer should throw an exception`() {
-        val account = accountManagementService.create(customer.id)
+        val account = service.create(customer.id)
         val credentialsCaptor = argumentCaptor<Credentials>()
 
         verify(keyVault).store(credentialsCaptor.capture())
-        verify(accountRepository).save(account)
+        verify(repository).create(account)
 
-        accountRepository.stub {
+        repository.stub {
             on {
                 findByCustomer(customer.id)
             } doReturn listOf(account)
         }
         assertThrows<IllegalStateException> {
-            accountManagementService.create(customer.id)
+            service.create(customer.id)
         }
     }
 
     @Test
     fun `deposit should make a smart contract deposit`() {
-        val account = accountManagementService.create(customer.id)
+        val account = service.create(customer.id)
 
-        accountRepository.stub {
+        repository.stub {
             on { findByCustomer(customer.id) } doReturn listOf(account)
             on { findById(account.id) } doReturn account
         }
 
         val depositCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
-        smallBank.stub {
+        contract.stub {
             on { deposit(amount) } doReturn depositCall
         }
 
         // Deposit 1 ETH to the bank
-        accountManagementService.deposit(account.id, amount.toBigDecimal())
+        service.deposit(account.id, amount.toBigDecimal())
 
-        verify(smallBank).deposit(amount)
+        verify(contract).deposit(amount)
         verify(depositCall).send()
     }
 
     @Test
     fun `withdraw should make a smart contract withdraw`() {
-        val account = accountManagementService.create(customer.id)
+        val account = service.create(customer.id)
 
-        accountRepository.stub {
+        repository.stub {
             on { findByCustomer(customer.id) } doReturn listOf(account)
             on { findById(account.id) } doReturn account
         }
 
         val withdrawCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
-        smallBank.stub {
+        contract.stub {
             on { withdraw(amount) } doReturn withdrawCall
         }
 
         // Withdraw 1 ETH from the bank
-        accountManagementService.withdraw(account.id, amount.toBigDecimal())
+        service.withdraw(account.id, amount.toBigDecimal())
 
-        verify(smallBank).withdraw(amount)
+        verify(contract).withdraw(amount)
         verify(withdrawCall).send()
     }
 
@@ -144,14 +144,14 @@ class EthereumAccountManagementServiceTest {
         val balanceCall = mock<RemoteFunctionCall<BigInteger>> {
             on { send() } doReturn amount
         }
-        smallBank.stub {
+        contract.stub {
             on { balance() } doReturn balanceCall
         }
 
-        val balance = accountManagementService.balance(AccountId("0x0"))
+        val balance = service.balance(AccountId("0x0"))
         Assertions.assertEquals(amount, balance.toBigInteger())
 
-        verify(smallBank).balance()
+        verify(contract).balance()
         verify(balanceCall).send()
     }
 }

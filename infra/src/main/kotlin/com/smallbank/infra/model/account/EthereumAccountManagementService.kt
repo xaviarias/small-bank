@@ -20,7 +20,7 @@ import java.time.Period
 @Service
 @Qualifier("ethereum")
 internal class EthereumAccountManagementService(
-    private val accountRepository: JpaAccountRepository,
+    private val accountRepository: AccountRepository,
     private val keyRepository: EthereumKeyVault,
     private val smallBank: SmallBank
 ) : AccountManagementService {
@@ -36,7 +36,7 @@ internal class EthereumAccountManagementService(
         val accountId = keyPair.publicKey.toHexString()
 
         return Account(AccountId(accountId), customerId, AccountType.ETHEREUM).also {
-            accountRepository.save(it)
+            accountRepository.create(it)
         }
     }
 

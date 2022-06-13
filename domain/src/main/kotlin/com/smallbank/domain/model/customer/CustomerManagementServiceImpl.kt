@@ -8,10 +8,10 @@ internal class CustomerManagementServiceImpl(
 ) : CustomerManagementService {
 
     override fun create(customer: Customer): Customer {
-        return customerRepository.save(customer)
+        return customerRepository.create(customer)
     }
 
-    override fun findById(customerId: CustomerId): Customer {
+    override fun findById(customerId: CustomerId): Customer? {
         return customerRepository.findById(customerId)
     }
 

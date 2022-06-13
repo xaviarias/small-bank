@@ -16,6 +16,8 @@ internal data class PersistentCustomer(
     @Id
     val id: String?,
 
+    val email: String,
+
     @Embedded
     val name: PersistentPersonalName,
 
