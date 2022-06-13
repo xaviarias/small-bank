@@ -53,12 +53,9 @@ open class AccountRepositoryTest {
     fun setUp() {
         accountRepository = AccountRepositoryImpl(
             jpaAccountRepository,
-            jpaCustomerRepository,
-            movementsRepository
+            jpaCustomerRepository
         )
-        customerRepository = CustomerRepositoryImpl(
-            jpaCustomerRepository, jpaAccountRepository
-        )
+        customerRepository = CustomerRepositoryImpl(jpaCustomerRepository)
     }
 
     @Test

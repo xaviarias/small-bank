@@ -1,7 +1,10 @@
 package com.smallbank.infra.model.account
 
+import com.smallbank.domain.model.account.Account
+import com.smallbank.domain.model.account.Account.AccountType
 import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountManagementService
+import com.smallbank.domain.model.account.AccountMovement.MovementType
 import com.smallbank.domain.model.customer.Customer
 import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.domain.model.customer.PersonalAddress
@@ -9,8 +12,14 @@ import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.SmallBankConfiguration
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toWei
+import com.smallbank.infra.ethereum.web3j.CUSTOMER_ACCOUNT
 import com.smallbank.infra.ethereum.web3j.SmallBank
-import org.junit.jupiter.api.Assertions
+import com.smallbank.infra.ethereum.web3j.SmallBank.AccountDepositEventResponse
+import com.smallbank.infra.ethereum.web3j.SmallBank.AccountWithdrawalEventResponse
+import com.smallbank.infra.model.customer.JpaCustomerRepository
+import com.smallbank.infra.model.customer.toEntity
+import io.reactivex.Flowable
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.argumentCaptor
@@ -18,6 +27,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
@@ -25,10 +35,14 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import org.web3j.crypto.Credentials
+import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
+import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.utils.Convert
 import java.math.BigInteger
+import java.time.LocalDateTime
+import java.util.Optional
 import java.util.UUID
 
 @SpringBootTest(
@@ -43,7 +57,13 @@ class AccountManagementServiceTest {
     private lateinit var service: AccountManagementService
 
     @MockBean
-    private lateinit var repository: AccountRepository
+    private lateinit var accountRepository: JpaAccountRepository
+
+    @MockBean
+    private lateinit var customerRepository: JpaCustomerRepository
+
+    @MockBean
+    private lateinit var movementsRepository: JpaAccountMovementRepository
 
     @MockBean
     private lateinit var keyVault: EthereumKeyVault
@@ -64,41 +84,77 @@ class AccountManagementServiceTest {
         )
     )
 
+    private val account = Account(
+        AccountId(CUSTOMER_ACCOUNT),
+        customer.id,
+        AccountType.ETHEREUM
+    )
+
     @Test
-    fun `create account should save a new account and store the keys in the key vault`() {
+    fun `create account should save a new account, store its credentials in the key vault and subscribe to events`() {
+        val persistentCustomer = customer.toEntity()
+        val persistentAccount = account.toEntity(persistentCustomer)
+
+        customerRepository.stub {
+            on {
+                findById(customer.id.id)
+            } doReturn Optional.of(persistentCustomer)
+        }
+
+        accountRepository.stub {
+            on { save(persistentAccount) } doReturn persistentAccount
+        }
+
+        val depositEvent = AccountDepositEventResponse().apply {
+            account = CUSTOMER_ACCOUNT
+            1.toWei(Convert.Unit.ETHER)
+        }
+        val withdrawEvent = AccountWithdrawalEventResponse().apply {
+            account = CUSTOMER_ACCOUNT
+            1.toWei(Convert.Unit.ETHER)
+        }
+
+        contract.stub {
+            on {
+                accountDepositEventFlowable(EARLIEST, LATEST)
+            } doReturn Flowable.just(depositEvent)
+            on {
+                accountWithdrawalEventFlowable(EARLIEST, LATEST)
+            } doReturn Flowable.just(withdrawEvent)
+        }
+
         val account = service.create(customer.id)
         val credentialsCaptor = argumentCaptor<Credentials>()
 
         verify(keyVault).store(credentialsCaptor.capture())
-        verify(repository).create(account)
+        verify(accountRepository).save(persistentAccount)
+        verify(contract).accountDepositEventFlowable(EARLIEST, LATEST)
+        verify(contract).accountWithdrawalEventFlowable(EARLIEST, LATEST)
     }
 
     @Test
     fun `create more than one account per customer should throw an exception`() {
-        val account = service.create(customer.id)
-        val credentialsCaptor = argumentCaptor<Credentials>()
-
-        verify(keyVault).store(credentialsCaptor.capture())
-        verify(repository).create(account)
-
-        repository.stub {
-            on {
-                findByCustomer(customer.id)
-            } doReturn listOf(account)
+        val persistentCustomer = customer.toEntity().let {
+            it.copy(accounts = listOf(account.toEntity(it)))
         }
+
+        customerRepository.stub {
+            on {
+                findById(customer.id.id)
+            } doReturn Optional.of(persistentCustomer)
+        }
+
         assertThrows<IllegalStateException> {
             service.create(customer.id)
         }
+
+        verify(customerRepository).findById(customer.id.id)
+        verifyNoInteractions(keyVault)
+        verifyNoInteractions(accountRepository)
     }
 
     @Test
     fun `deposit should make a smart contract deposit`() {
-        val account = service.create(customer.id)
-
-        repository.stub {
-            on { findByCustomer(customer.id) } doReturn listOf(account)
-            on { findById(account.id) } doReturn account
-        }
 
         val depositCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
@@ -106,21 +162,22 @@ class AccountManagementServiceTest {
             on { deposit(amount) } doReturn depositCall
         }
 
-        // Deposit 1 ETH to the bank
-        service.deposit(account.id, amount.toBigDecimal())
+        accountRepository.stub {
+            on {
+                findById(CUSTOMER_ACCOUNT)
+            } doReturn Optional.of(account.toEntity(customer.toEntity()))
+        }
 
+        // Deposit 1 ETH to the bank (account is ignored)
+        service.deposit(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
+
+        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
         verify(contract).deposit(amount)
         verify(depositCall).send()
     }
 
     @Test
     fun `withdraw should make a smart contract withdraw`() {
-        val account = service.create(customer.id)
-
-        repository.stub {
-            on { findByCustomer(customer.id) } doReturn listOf(account)
-            on { findById(account.id) } doReturn account
-        }
 
         val withdrawCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
@@ -128,9 +185,16 @@ class AccountManagementServiceTest {
             on { withdraw(amount) } doReturn withdrawCall
         }
 
-        // Withdraw 1 ETH from the bank
-        service.withdraw(account.id, amount.toBigDecimal())
+        accountRepository.stub {
+            on {
+                findById(CUSTOMER_ACCOUNT)
+            } doReturn Optional.of(account.toEntity(customer.toEntity()))
+        }
 
+        // Withdraw 1 ETH from the bank
+        service.withdraw(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
+
+        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
         verify(contract).withdraw(amount)
         verify(withdrawCall).send()
     }
@@ -145,10 +209,50 @@ class AccountManagementServiceTest {
             on { balance() } doReturn balanceCall
         }
 
-        val balance = service.balance(AccountId("0x0"))
-        Assertions.assertEquals(amount, balance.toBigInteger())
+        accountRepository.stub {
+            on {
+                findById(CUSTOMER_ACCOUNT)
+            } doReturn Optional.of(account.toEntity(customer.toEntity()))
+        }
 
+        val balance = service.balance(AccountId(CUSTOMER_ACCOUNT))
+        assertEquals(amount, balance.toBigInteger())
+
+        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
         verify(contract).balance()
         verify(balanceCall).send()
+    }
+
+    @Test
+    fun `movements should list deposits and withdrawals`() {
+        val persistentAccount = account.toEntity(customer.toEntity())
+
+        accountRepository.stub {
+            on { findById(CUSTOMER_ACCOUNT) } doReturn Optional.of(persistentAccount)
+        }
+
+        val deposit = PersistentAccountMovement(
+            "0x0",
+            LocalDateTime.now(),
+            persistentAccount,
+            MovementType.DEPOSIT,
+            100000.toBigDecimal()
+        )
+        val withdrawal = PersistentAccountMovement(
+            "0x1",
+            LocalDateTime.now(),
+            persistentAccount,
+            MovementType.WITHDRAW,
+            100000.toBigDecimal()
+        )
+        movementsRepository.stub {
+            on { findByAccountId(CUSTOMER_ACCOUNT) } doReturn listOf(deposit, withdrawal)
+        }
+
+        val movements = service.movements(account.id)
+        assertEquals(listOf(deposit.toPojo(), withdrawal.toPojo()), movements)
+
+        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
+        verify(movementsRepository).findByAccountId(account.id.id)
     }
 }

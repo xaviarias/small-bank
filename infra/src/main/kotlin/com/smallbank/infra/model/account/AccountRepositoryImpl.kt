@@ -5,24 +5,25 @@ import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountMovement
 import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.infra.model.customer.JpaCustomerRepository
+import com.smallbank.infra.model.customer.PersistentCustomer
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
 internal open class AccountRepositoryImpl(
     private val delegate: JpaAccountRepository,
-    private val customerRepository: JpaCustomerRepository,
-    private val movementsRepository: JpaAccountMovementRepository
+    private val customerRepository: JpaCustomerRepository
 ) : AccountRepository {
 
     override fun create(account: Account): Account {
-        return update(account)
+        val customer = customerRepository.findById(account.customerId.id).orElseThrow()
+        val persistentAccount = account.toEntity(customer)
+        return delegate.save(persistentAccount).toPojo()
     }
 
     override fun update(account: Account): Account {
-        val persistentAccount = account.toEntity(
-            customerRepository, movementsRepository
-        )
+        val customer = customerRepository.findById(account.customerId.id).orElseThrow()
+        val persistentAccount = account.toEntity(customer)
         return delegate.save(persistentAccount).toPojo()
     }
 
@@ -32,12 +33,6 @@ internal open class AccountRepositoryImpl(
 
     override fun findByCustomer(customerId: CustomerId): List<Account> {
         return delegate.findAll().map { it.toPojo() }
-    }
-
-    override fun movements(accountId: AccountId): List<AccountMovement> {
-        return delegate.findById(accountId.id).map { account ->
-            account.movements.map { it.toPojo() }
-        }.orElse(null)
     }
 }
 
@@ -49,14 +44,11 @@ internal interface JpaAccountMovementRepository : JpaRepository<PersistentAccoun
     fun findByAccountId(accountId: String): List<PersistentAccountMovement>
 }
 
-internal fun Account.toEntity(
-    customerRepository: JpaCustomerRepository,
-    movementsRepository: JpaAccountMovementRepository
-) = PersistentAccount(
+internal fun Account.toEntity(customer: PersistentCustomer) = PersistentAccount(
     id = id.id,
     type = type,
-    customer = customerRepository.findById(customerId.id).orElseThrow(),
-    movements = movementsRepository.findByAccountId(id.id)
+    customer = customer,
+    movements = emptyList()
 )
 
 internal fun PersistentAccount.toPojo() = Account(
@@ -65,12 +57,10 @@ internal fun PersistentAccount.toPojo() = Account(
     type = type
 )
 
-internal fun AccountMovement.toEntity(
-    accountRepository: JpaAccountRepository
-) = PersistentAccountMovement(
+internal fun AccountMovement.toEntity(account: PersistentAccount) = PersistentAccountMovement(
     id = id,
     timestamp = timestamp,
-    account = accountRepository.findById(accountId.id).orElseThrow(),
+    account = account,
     type = type,
     amount = amount
 )

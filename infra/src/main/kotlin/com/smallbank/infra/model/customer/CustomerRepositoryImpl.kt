@@ -5,22 +5,20 @@ import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.domain.model.customer.CustomerRepository
 import com.smallbank.domain.model.customer.PersonalAddress
 import com.smallbank.domain.model.customer.PersonalName
-import com.smallbank.infra.model.account.JpaAccountRepository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
 internal open class CustomerRepositoryImpl(
-    private val delegate: JpaCustomerRepository,
-    private val accountRepository: JpaAccountRepository
+    private val delegate: JpaCustomerRepository
 ) : CustomerRepository {
 
     override fun create(customer: Customer): Customer {
-        return update(customer)
+        return delegate.save(customer.toEntity()).toPojo()
     }
 
     override fun update(customer: Customer): Customer {
-        return delegate.save(customer.toEntity(accountRepository)).toPojo()
+        return delegate.save(customer.toEntity()).toPojo()
     }
 
     override fun findById(customerId: CustomerId): Customer? {
@@ -34,9 +32,7 @@ internal open class CustomerRepositoryImpl(
 
 internal interface JpaCustomerRepository : JpaRepository<PersistentCustomer, String>
 
-internal fun Customer.toEntity(
-    accountRepository: JpaAccountRepository
-) = PersistentCustomer(
+internal fun Customer.toEntity() = PersistentCustomer(
     id = id.id,
     email = email,
     name = PersistentPersonalName(
@@ -50,7 +46,7 @@ internal fun Customer.toEntity(
         address.city,
         address.isoCountryCode
     ),
-    accounts = accountRepository.findByCustomerId(id.id)
+    accounts = emptyList()
 )
 
 internal fun PersistentCustomer.toPojo() = Customer(

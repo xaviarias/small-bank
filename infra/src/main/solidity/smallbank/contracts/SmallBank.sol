@@ -7,11 +7,11 @@ contract SmallBank {
     // Maps customer addresses to their balance
     mapping(address => uint) private balances;
 
-    // Log the event about a deposit being made by the customer
-    event AccountDeposit(address indexed customer, uint amount);
+    // Log the event about a deposit being made
+    event AccountDeposit(address indexed account, uint amount);
 
-    // Log the event about a withdrawal being made the customer
-    event AccountWithdrawal(address indexed customer, uint amount);
+    // Log the event about a withdrawal being
+    event AccountWithdrawal(address indexed account, uint amount);
 
     constructor() {
         // Set the owner to the creator of this contract

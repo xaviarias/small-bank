@@ -17,13 +17,11 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.Keys
-import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
+import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import java.math.BigDecimal
 import java.security.SecureRandom
 import java.time.LocalDateTime
-import java.time.Period
-import java.util.UUID
-import javax.annotation.PostConstruct
 
 @Service
 @Qualifier("ethereum")
@@ -37,80 +35,80 @@ internal class AccountManagementServiceImpl(
 
     private val random = SecureRandom()
 
-    @PostConstruct
-    fun subscribeToMovements() {
-        smallBank.accountDepositEventFlowable(
-            DefaultBlockParameterName.EARLIEST,
-            DefaultBlockParameterName.LATEST
-        ).subscribe {
-            movementRepository.save(it.toEntity(accountRepository))
-        }
-        smallBank.accountWithdrawalEventFlowable(
-            DefaultBlockParameterName.EARLIEST,
-            DefaultBlockParameterName.LATEST
-        ).subscribe {
-            movementRepository.save(it.toEntity(accountRepository))
-        }
-    }
-
     override fun create(customerId: CustomerId): Account {
-        checkAlreadyExistingAccount(customerId)
+        val customer = customerRepository.findById(customerId.id).orElseThrow()
+
+        // Ensure only one Ethereum account exists per customer
+        if (customer.accounts.any { it.type == AccountType.ETHEREUM }) {
+            throw IllegalStateException("Already existing account for customer: $customerId")
+        }
 
         val keyPair = Keys.createEcKeyPair(random)
         keyRepository.store(Credentials.create(keyPair))
 
-        val accountId = keyPair.publicKey.toHexString()
-        return Account(AccountId(accountId), customerId, AccountType.ETHEREUM).also {
-            accountRepository.save(it.toEntity(customerRepository, movementRepository))
+        val accountId = AccountId(keyPair.publicKey.toHexString())
+        val account = Account(accountId, customerId, AccountType.ETHEREUM).toEntity(customer)
+
+        return accountRepository.save(account).toPojo().also {
+            subscribeToMovements(account)
         }
     }
 
     override fun list(customerId: CustomerId): List<Account> {
+        customerRepository.findById(customerId.id).orElseThrow()
         return accountRepository.findByCustomerId(customerId.id).map { it.toPojo() }
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
+        accountRepository.findById(accountId.id).orElseThrow()
         smallBank.deposit(amount.toBigInteger()).send()
     }
 
     override fun withdraw(accountId: AccountId, amount: BigDecimal) {
+        accountRepository.findById(accountId.id).orElseThrow()
         smallBank.withdraw(amount.toBigInteger()).send()
     }
 
     override fun balance(accountId: AccountId): BigDecimal {
+        accountRepository.findById(accountId.id).orElseThrow()
         return smallBank.balance().send().toBigDecimal()
     }
 
     // TODO Support date intervals
-    override fun movements(accountId: AccountId, period: Period): List<AccountMovement> {
+    override fun movements(accountId: AccountId): List<AccountMovement> {
+        accountRepository.findById(accountId.id).orElseThrow()
         return movementRepository.findByAccountId(accountId.id).map { it.toPojo() }
     }
 
     /**
-     * Ensure only one Ethereum account exists per customer.
+     * FIXME Filter events by account id.
+     * FIXME Sync database only with delta.
      */
-    private fun checkAlreadyExistingAccount(customerId: CustomerId) {
-        if (list(customerId).any { it.type == AccountType.ETHEREUM }) {
-            throw IllegalStateException("Already existing account for customer: $customerId")
+    private fun subscribeToMovements(account: PersistentAccount) {
+        smallBank.accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
+            movementRepository.save(it.toEntity(account))
+        }
+        smallBank.accountWithdrawalEventFlowable(EARLIEST, LATEST).subscribe {
+            movementRepository.save(it.toEntity(account))
         }
     }
 
     private fun AccountDepositEventResponse.toEntity(
-        accountRepository: JpaAccountRepository
+        account: PersistentAccount
     ) = PersistentAccountMovement(
-        id = UUID.randomUUID().toString(),
+        id = log.transactionHash,
         timestamp = LocalDateTime.now(),
-        account = accountRepository.findById(customer).orElseThrow(),
+        account = account,
         type = MovementType.DEPOSIT,
         amount = amount.toBigDecimal()
     )
 
     private fun AccountWithdrawalEventResponse.toEntity(
-        accountRepository: JpaAccountRepository
+        account: PersistentAccount
     ) = PersistentAccountMovement(
-        id = UUID.randomUUID().toString(),
+        id = log.transactionHash,
         timestamp = LocalDateTime.now(),
-        account = accountRepository.findById(customer).orElseThrow(),
+        account = account,
         type = MovementType.WITHDRAW,
         amount = amount.toBigDecimal()
     )
