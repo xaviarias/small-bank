@@ -9,9 +9,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import java.util.UUID
 
-/**
- * TODO Exhaustive tests.
- */
 class CustomerManagementServiceTest {
 
     private val customer = Customer(
