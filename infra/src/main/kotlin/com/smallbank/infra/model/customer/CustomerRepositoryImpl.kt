@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-internal class CustomerRepositoryImpl(
+internal open class CustomerRepositoryImpl(
     private val delegate: JpaCustomerRepository,
     private val accountRepository: JpaAccountRepository
 ) : CustomerRepository {
