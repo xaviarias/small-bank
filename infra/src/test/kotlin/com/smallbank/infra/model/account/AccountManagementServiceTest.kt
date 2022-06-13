@@ -22,7 +22,9 @@ import io.reactivex.Flowable
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
@@ -44,6 +46,7 @@ import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.Optional
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 
 @SpringBootTest(
     classes = [SmallBankConfiguration::class],
@@ -93,7 +96,7 @@ class AccountManagementServiceTest {
     @Test
     fun `create account should save a new account, store its credentials in the key vault and subscribe to events`() {
         val persistentCustomer = customer.toEntity()
-        val persistentAccount = account.toEntity(persistentCustomer)
+        val persistentAccount = AtomicReference<PersistentAccount>()
 
         customerRepository.stub {
             on {
@@ -102,16 +105,20 @@ class AccountManagementServiceTest {
         }
 
         accountRepository.stub {
-            on { save(persistentAccount) } doReturn persistentAccount
+            onGeneric { save(any()) } doAnswer {
+                val accountId = (it.arguments[0] as PersistentAccount).id
+                persistentAccount.set(account.toEntity(persistentCustomer).copy(id = accountId))
+                persistentAccount.get()
+            }
         }
 
         val depositEvent = AccountDepositEventResponse().apply {
             account = CUSTOMER_ACCOUNT
-            1.toWei(Convert.Unit.ETHER)
+            amount = 1.toWei(Convert.Unit.ETHER)
         }
         val withdrawEvent = AccountWithdrawalEventResponse().apply {
             account = CUSTOMER_ACCOUNT
-            1.toWei(Convert.Unit.ETHER)
+            amount = 1.toWei(Convert.Unit.ETHER)
         }
 
         contract.stub {
@@ -124,10 +131,13 @@ class AccountManagementServiceTest {
         }
 
         val account = service.create(customer.id)
-        val credentialsCaptor = argumentCaptor<Credentials>()
+        assertEquals(persistentAccount.get().toPojo(), account)
 
+        val credentialsCaptor = argumentCaptor<Credentials>()
         verify(keyVault).store(credentialsCaptor.capture())
-        verify(accountRepository).save(persistentAccount)
+
+        verify(accountRepository).save(persistentAccount.get())
+        //verify(movementsRepository).save(depositEvent)
         verify(contract).accountDepositEventFlowable(EARLIEST, LATEST)
         verify(contract).accountWithdrawalEventFlowable(EARLIEST, LATEST)
     }
