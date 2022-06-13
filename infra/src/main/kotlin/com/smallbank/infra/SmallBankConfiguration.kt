@@ -10,6 +10,7 @@ import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import java.time.Clock
 
 @Configuration
 @ComponentScan
@@ -22,4 +23,8 @@ internal open class SmallBankConfiguration {
     open fun customerService(repository: CustomerRepository): CustomerManagementService {
         return CustomerManagementServiceImpl(repository)
     }
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    open fun systemClock(): Clock = Clock.systemUTC()
 }

@@ -35,15 +35,22 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.test.context.ActiveProfiles
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import org.web3j.protocol.core.RemoteFunctionCall
+import org.web3j.protocol.core.methods.response.Log
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.utils.Convert
 import java.math.BigInteger
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -59,6 +66,9 @@ class AccountManagementServiceTest {
     @Qualifier("ethereum")
     private lateinit var service: AccountManagementService
 
+    @Autowired
+    private lateinit var clock: Clock
+
     @MockBean
     private lateinit var accountRepository: JpaAccountRepository
 
@@ -73,6 +83,13 @@ class AccountManagementServiceTest {
 
     @MockBean
     private lateinit var contract: SmallBank
+
+    @Configuration
+    open class TestConfiguration {
+        @Bean
+        @Primary
+        open fun testClock(): Clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
+    }
 
     private val customer = Customer(
         CustomerId(UUID.randomUUID().toString()),
@@ -94,9 +111,19 @@ class AccountManagementServiceTest {
     )
 
     @Test
-    fun `create account should save a new account, store its credentials in the key vault and subscribe to events`() {
+    fun `create account should save a new account in the repository, store its credentials in the key vault and subscribe to events`() {
         val persistentCustomer = customer.toEntity()
         val persistentAccount = AtomicReference<PersistentAccount>()
+
+        accountRepository.stub {
+            onGeneric { save(any()) } doAnswer {
+                val accountId = (it.arguments[0] as PersistentAccount).id
+                with(persistentAccount) {
+                    set(account.toEntity(persistentCustomer).copy(id = accountId))
+                    get()
+                }
+            }
+        }
 
         customerRepository.stub {
             on {
@@ -104,21 +131,15 @@ class AccountManagementServiceTest {
             } doReturn Optional.of(persistentCustomer)
         }
 
-        accountRepository.stub {
-            onGeneric { save(any()) } doAnswer {
-                val accountId = (it.arguments[0] as PersistentAccount).id
-                persistentAccount.set(account.toEntity(persistentCustomer).copy(id = accountId))
-                persistentAccount.get()
-            }
-        }
-
         val depositEvent = AccountDepositEventResponse().apply {
             account = CUSTOMER_ACCOUNT
             amount = 1.toWei(Convert.Unit.ETHER)
+            log = Log().apply { transactionHash = "0x0" }
         }
         val withdrawEvent = AccountWithdrawalEventResponse().apply {
             account = CUSTOMER_ACCOUNT
             amount = 1.toWei(Convert.Unit.ETHER)
+            log = Log().apply { transactionHash = "0x1" }
         }
 
         contract.stub {
@@ -130,14 +151,18 @@ class AccountManagementServiceTest {
             } doReturn Flowable.just(withdrawEvent)
         }
 
-        val account = service.create(customer.id)
-        assertEquals(persistentAccount.get().toPojo(), account)
+        val createdAccount = service.create(customer.id)
+
+        with(persistentAccount.get()) {
+            assertEquals(toPojo(), createdAccount)
+            verify(accountRepository).save(this)
+            verify(movementsRepository).save(depositEvent.toEntity(this, clock))
+            verify(movementsRepository).save(withdrawEvent.toEntity(this, clock))
+        }
 
         val credentialsCaptor = argumentCaptor<Credentials>()
         verify(keyVault).store(credentialsCaptor.capture())
 
-        verify(accountRepository).save(persistentAccount.get())
-        //verify(movementsRepository).save(depositEvent)
         verify(contract).accountDepositEventFlowable(EARLIEST, LATEST)
         verify(contract).accountWithdrawalEventFlowable(EARLIEST, LATEST)
     }

@@ -21,6 +21,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import java.math.BigDecimal
 import java.security.SecureRandom
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
@@ -30,7 +31,8 @@ internal class AccountManagementServiceImpl(
     private val customerRepository: JpaCustomerRepository,
     private val movementRepository: JpaAccountMovementRepository,
     private val keyRepository: EthereumKeyVault,
-    private val smallBank: SmallBank
+    private val smallBank: SmallBank,
+    private val clock: Clock
 ) : AccountManagementService {
 
     private val random = SecureRandom()
@@ -86,30 +88,32 @@ internal class AccountManagementServiceImpl(
      */
     private fun subscribeToMovements(account: PersistentAccount) {
         smallBank.accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
-            movementRepository.save(it.toEntity(account))
+            movementRepository.save(it.toEntity(account, clock))
         }
         smallBank.accountWithdrawalEventFlowable(EARLIEST, LATEST).subscribe {
-            movementRepository.save(it.toEntity(account))
+            movementRepository.save(it.toEntity(account, clock))
         }
     }
-
-    private fun AccountDepositEventResponse.toEntity(
-        account: PersistentAccount
-    ) = PersistentAccountMovement(
-        id = log.transactionHash,
-        timestamp = LocalDateTime.now(),
-        account = account,
-        type = MovementType.DEPOSIT,
-        amount = amount.toBigDecimal()
-    )
-
-    private fun AccountWithdrawalEventResponse.toEntity(
-        account: PersistentAccount
-    ) = PersistentAccountMovement(
-        id = log.transactionHash,
-        timestamp = LocalDateTime.now(),
-        account = account,
-        type = MovementType.WITHDRAW,
-        amount = amount.toBigDecimal()
-    )
 }
+
+internal fun AccountDepositEventResponse.toEntity(
+    account: PersistentAccount,
+    clock: Clock
+) = PersistentAccountMovement(
+    id = log.transactionHash,
+    timestamp = LocalDateTime.now(clock),
+    account = account,
+    type = MovementType.DEPOSIT,
+    amount = amount.toBigDecimal()
+)
+
+internal fun AccountWithdrawalEventResponse.toEntity(
+    account: PersistentAccount,
+    clock: Clock
+) = PersistentAccountMovement(
+    id = log.transactionHash,
+    timestamp = LocalDateTime.now(clock),
+    account = account,
+    type = MovementType.WITHDRAW,
+    amount = amount.toBigDecimal()
+)
