@@ -7,9 +7,6 @@ contract SmallBank {
     // Maps customer addresses to their balance
     mapping(address => uint) private balances;
 
-    // Log the event about an account being created by the customer
-    event AccountCreation(address indexed customer, address indexed account);
-
     // Log the event about a deposit being made by the customer
     event AccountDeposit(address indexed customer, uint amount);
 
@@ -19,7 +16,6 @@ contract SmallBank {
     constructor() {
         // Set the owner to the creator of this contract
         owner = msg.sender;
-        emit AccountCreation(msg.sender, address(this));
     }
 
     /// @notice Deposit ether into bank, requires method is "payable"
