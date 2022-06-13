@@ -36,7 +36,7 @@ import java.util.UUID
     webEnvironment = WebEnvironment.NONE
 )
 @ActiveProfiles("test")
-class EthereumAccountManagementServiceTest {
+class AccountManagementServiceTest {
 
     @Autowired
     @Qualifier("ethereum")

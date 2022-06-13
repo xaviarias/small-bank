@@ -19,7 +19,7 @@ import java.time.Period
 
 @Service
 @Qualifier("ethereum")
-internal class EthereumAccountManagementService(
+internal class AccountManagementServiceImpl(
     private val accountRepository: AccountRepository,
     private val keyRepository: EthereumKeyVault,
     private val smallBank: SmallBank
