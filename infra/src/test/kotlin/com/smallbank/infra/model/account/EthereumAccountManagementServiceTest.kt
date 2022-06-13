@@ -32,10 +32,7 @@ import java.math.BigInteger
 import java.util.UUID
 
 @SpringBootTest(
-    classes = [
-        SmallBankConfiguration::class,
-        EthereumAccountManagementService::class
-    ],
+    classes = [SmallBankConfiguration::class],
     webEnvironment = WebEnvironment.NONE
 )
 @ActiveProfiles("test")
