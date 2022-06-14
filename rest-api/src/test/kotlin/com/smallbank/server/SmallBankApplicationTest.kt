@@ -88,8 +88,6 @@ class SmallBankApplicationTest {
             null,
             CUSTOMER_LIST
         ).body!!
-        println(customers.first().id)
-        println(customer.id)
         assertTrue(customers.contains(customer))
     }
 
@@ -97,8 +95,9 @@ class SmallBankApplicationTest {
     @Order(4)
     fun `list no accounts`() {
         val accounts = template.getForEntity(
-            "/customer/${customer.id}/accounts",
-            List::class.java
+            "/customers/{customerId}/accounts",
+            List::class.java,
+            customer.id.id
         )
         assertTrue(accounts.body!!.isEmpty())
     }
@@ -107,8 +106,9 @@ class SmallBankApplicationTest {
     @Order(5)
     fun `create account`() {
         val newAccount = template.postForEntity(
-            "/customer/${customer.id}/accounts",
-            null, Account::class.java
+            "/customers/{customerId}/accounts",
+            null, Account::class.java,
+            customer.id.id
         )
         assertEquals(account, newAccount.body!!)
     }
@@ -117,10 +117,10 @@ class SmallBankApplicationTest {
     @Order(6)
     fun `list one account`() {
         val accounts = template.exchange(
-            "/customer/${customer.id}/accounts",
-            HttpMethod.GET,
-            null,
-            ACCOUNT_LIST
+            "/customers/{customerId}/accounts",
+            HttpMethod.GET, null,
+            ACCOUNT_LIST,
+            customer.id.id
         ).body!!
         with(accounts) {
             assertTrue(size == 1)
