@@ -110,6 +110,7 @@ internal class AccountManagementServiceImpl(
      * FIXME Sync database only with delta blocks.
      */
     private fun subscribeToMovements(account: PersistentAccount) {
+        require(ethereumAccount != null) { "No Ethereum account defined!" }
         val credentials = resolveCredentials(ethereumAccount!!)
 
         loadContract(credentials).accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
@@ -136,8 +137,6 @@ internal class AccountManagementServiceImpl(
     }
 
     private fun loadContract(credentials: Credentials): SmallBank {
-        require(ethereumAccount != null) { "No Ethereum account defined!" }
-
         if (contractAddress == null) {
             contractAddress = deployContract()
         }
