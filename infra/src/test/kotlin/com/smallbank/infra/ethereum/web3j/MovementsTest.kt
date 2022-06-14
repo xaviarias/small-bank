@@ -2,6 +2,7 @@ package com.smallbank.infra.ethereum.web3j
 
 import com.smallbank.infra.ethereum.toWei
 import com.smallbank.infra.ethereum.web3j.SmallBank.AccountDepositEventResponse
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.web3j.EVMTest
 import org.web3j.NodeType
@@ -40,5 +41,14 @@ class MovementsTest : SmallBankTest() {
         smallBank.withdraw(amount).send()
 
         countDownLatch.await()
+
+        with(depositRef.get()) {
+            Assertions.assertEquals(SMALLBANK_ACCOUNT, account)
+            Assertions.assertEquals(amount, this.amount)
+        }
+        with(withdrawRef.get()) {
+            Assertions.assertEquals(SMALLBANK_ACCOUNT, account)
+            Assertions.assertEquals(amount, this.amount)
+        }
     }
 }
