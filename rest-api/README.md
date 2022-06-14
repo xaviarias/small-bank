@@ -1,2 +1,0 @@
-# Small Bank REST API
-
