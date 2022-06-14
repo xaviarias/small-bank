@@ -8,6 +8,7 @@ import java.math.BigDecimal
  */
 interface AccountManagementService {
     fun create(customerId: CustomerId): Account
+    fun find(accountId: AccountId): Account
     fun list(customerId: CustomerId): List<Account>
     fun deposit(accountId: AccountId, amount: BigDecimal)
     fun withdraw(accountId: AccountId, amount: BigDecimal)

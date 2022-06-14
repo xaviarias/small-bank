@@ -56,6 +56,10 @@ internal class AccountManagementServiceImpl(
         }
     }
 
+    override fun find(accountId: AccountId): Account {
+        return accountRepository.findById(accountId.id).orElseThrow().toPojo()
+    }
+
     override fun list(customerId: CustomerId): List<Account> {
         customerRepository.findById(customerId.id).orElseThrow()
         return accountRepository.findByCustomerId(customerId.id).map { it.toPojo() }
