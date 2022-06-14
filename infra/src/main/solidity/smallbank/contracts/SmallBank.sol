@@ -13,6 +13,9 @@ contract SmallBank {
     // Log the event about a withdrawal being
     event AccountWithdrawal(address indexed account, uint amount);
 
+    // Log the event about a withdrawal being
+    event AccountTransfer(address indexed from, address indexed to, uint amount);
+
     constructor() {
         // Set the owner to the creator of this contract
         owner = msg.sender;
@@ -26,13 +29,26 @@ contract SmallBank {
 
     /// @notice Withdraw ether from bank
     function withdraw(uint withdrawAmount) public {
-        // Check enough balance available, otherwise just return balance
+
+        // Check enough balance available, otherwise throw exception
         require(withdrawAmount <= balances[msg.sender], "Insufficient account balance");
 
         balances[msg.sender] -= withdrawAmount;
         payable(msg.sender).transfer(withdrawAmount);
 
         emit AccountWithdrawal(msg.sender, withdrawAmount);
+    }
+
+    /// @notice Transfer deposits from bank to account
+    function transfer(address toAccount, uint transferAmount) public {
+
+        // Check enough balance available, otherwise throw exception
+        require(transferAmount <= balances[msg.sender], "Insufficient account balance");
+
+        balances[msg.sender] -= transferAmount;
+        payable(toAccount).transfer(transferAmount);
+
+        emit AccountTransfer(msg.sender, toAccount, transferAmount);
     }
 
     /// @notice Just reads balance of the account requesting, so "constant"
