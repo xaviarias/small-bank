@@ -57,4 +57,21 @@ To build the project and run the tests, run the command:
 ./gradlew build 
 ```
 
-The project requires a Docker environment running to run the tests.
+The project requires a Docker environment to run the tests.
+
+### Configuration
+
+The REST API application requires some configuration to run:
+
+* `smallbank.ethereum.account`: The admin account to deploy the initial contract (mandatory).
+* `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
+* `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
+
+### Run the REST API
+
+Run the commands:
+
+```
+cd rest-api
+./gradlew bootRun 
+```
