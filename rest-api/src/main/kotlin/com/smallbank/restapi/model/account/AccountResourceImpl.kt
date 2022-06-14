@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 class AccountResourceImpl(
     private val accountService: AccountManagementService
 ) : AccountResource {
+
     override fun create(customerId: String): Account {
         return accountService.create(CustomerId(customerId))
     }
@@ -21,6 +22,4 @@ class AccountResourceImpl(
     override fun findByCustomer(customerId: String): List<Account> {
         return accountService.list(CustomerId(customerId))
     }
-
-
 }
