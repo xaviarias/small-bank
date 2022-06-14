@@ -23,8 +23,7 @@ internal class EthereumConfiguration {
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)
     fun web3j(service: Web3jService): Web3j {
-        web3j = Web3j.build(service)
-        return web3j
+        return Web3j.build(service)
     }
 
     @Bean
@@ -36,7 +35,6 @@ internal class EthereumConfiguration {
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)
     fun gasProvider(): ContractGasProvider {
-        gasProvider = DefaultGasProvider()
-        return gasProvider
+        return DefaultGasProvider()
     }
 }
