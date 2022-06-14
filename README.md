@@ -63,6 +63,7 @@ The project requires a Docker environment to run the tests.
 
 The REST API application requires some configuration to run:
 
+* `smallbank.ethereum.url`: The Ethereum endpoint (defaults to `http://localhost:8545/`).
 * `smallbank.ethereum.account`: The admin account to deploy the initial contract (mandatory).
 * `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
 * `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
