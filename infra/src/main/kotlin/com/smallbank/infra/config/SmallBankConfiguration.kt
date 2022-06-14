@@ -1,4 +1,4 @@
-package com.smallbank.infra
+package com.smallbank.infra.config
 
 import com.smallbank.domain.model.customer.CustomerManagementService
 import com.smallbank.domain.model.customer.CustomerManagementServiceImpl
@@ -10,6 +10,7 @@ import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import java.security.SecureRandom
 import java.time.Clock
 
 @Configuration
@@ -23,6 +24,10 @@ internal open class SmallBankConfiguration {
     open fun customerService(repository: CustomerRepository): CustomerManagementService {
         return CustomerManagementServiceImpl(repository)
     }
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    open fun secureRandom(): SecureRandom = SecureRandom()
 
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)
