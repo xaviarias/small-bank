@@ -40,7 +40,7 @@ Defines the bounded context in terms of DDD, here simplified as a single one.
 As mentioned, it could be split into several bounded contexts, one for customer-related elements,
 and the other for accounts.
 
-Implements the JPA and Ethereum adapters for the SmallBank Domain, relying on JPA to persist customer-related data, 
+Implements the JPA and Ethereum adapters for the SmallBank Domain, relying on JPA to persist customer-related data,
 and on an Ethereum smart contract for accounts-specific data, such as balances and movements.
 
 This would correspond to the outer hexagon, with runtime dependencies such as JPA and Spring.
@@ -48,3 +48,13 @@ This would correspond to the outer hexagon, with runtime dependencies such as JP
 ### Web Application
 
 The web application implements a REST API which invokes the SmallBank services defined in the domain module.
+
+## Building and testing
+
+To build the project and run the tests, run the command:
+
+```
+./gradlew build 
+```
+
+The project requires a Docker environment running to run the tests.
