@@ -11,6 +11,7 @@ import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.restapi.SmallBankApplication
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -18,13 +19,15 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
+import org.springframework.test.context.ActiveProfiles
 import org.web3j.EVMTest
+import org.web3j.crypto.Credentials
 import java.util.UUID
 
 @EVMTest
@@ -34,9 +37,16 @@ import java.util.UUID
 )
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation::class)
+@ActiveProfiles("integration-test")
 class SmallBankApplicationTest {
 
-    @MockBean
+    @Value("\${smallbank.ethereum.account}")
+    private var ethereumAccount: String? = null
+
+    @Value("\${smallbank.ethereum.private-key}")
+    private var privateKey: String? = null
+
+    @Autowired
     private lateinit var keyVault: EthereumKeyVault
 
     @Autowired
@@ -60,6 +70,12 @@ class SmallBankApplicationTest {
         customer.id,
         AccountType.ETHEREUM
     )
+
+    @BeforeAll
+    fun setUp() {
+        // Start with the Ethereum account key pair
+        keyVault.store(ethereumAccount!!, Credentials.create(privateKey!!))
+    }
 
     @Test
     @Order(1)

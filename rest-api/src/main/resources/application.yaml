@@ -1,6 +1,14 @@
 spring:
   main:
     banner-mode: off
+  config:
+    activate:
+      on-profile: integration-test
+
+smallbank:
+  ethereum:
+    account: '0xfe3b557e8fb62b89f4916b721be55ceb828dbd73'
+    private-key: '0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63'
 
 logging:
   level:
