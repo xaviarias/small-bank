@@ -1,4 +1,4 @@
-package com.smallbank.infra.ethereum
+package com.smallbank.infra.config
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.BeanDefinition
@@ -17,8 +17,8 @@ internal class EthereumConfiguration {
     private lateinit var web3j: Web3j
     private lateinit var gasProvider: ContractGasProvider
 
-    @Value("\${smallbank.ethereum.url:#{null}}")
-    private var url: String? = HttpService.DEFAULT_URL
+    @Value("\${smallbank.ethereum.url:'${HttpService.DEFAULT_URL}'}")
+    private var url: String? = null
 
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)
