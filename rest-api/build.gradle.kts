@@ -24,5 +24,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.web3j:web3j-unit:4.9.2")
+    testImplementation("org.web3j:web3j-evm:4.9.2")
     runtimeOnly("com.h2database:h2:2.1.212")
 }

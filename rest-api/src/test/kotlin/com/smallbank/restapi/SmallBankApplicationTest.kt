@@ -1,4 +1,4 @@
-package com.smallbank.server
+package com.smallbank.restapi
 
 import com.smallbank.domain.model.account.Account
 import com.smallbank.domain.model.account.Account.AccountType
@@ -8,7 +8,6 @@ import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.domain.model.customer.PersonalAddress
 import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.ethereum.EthereumKeyVault
-import com.smallbank.restapi.SmallBankApplication
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -26,13 +25,14 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.test.context.ActiveProfiles
-import org.web3j.EVMTest
 import org.web3j.crypto.Credentials
 import java.util.UUID
 
-@EVMTest
 @SpringBootTest(
-    classes = [SmallBankApplication::class],
+    classes = [
+        SmallBankApplication::class,
+        SmallBankApplicationTestConfiguration::class
+    ],
     webEnvironment = WebEnvironment.RANDOM_PORT
 )
 @TestInstance(Lifecycle.PER_CLASS)
@@ -123,8 +123,8 @@ class SmallBankApplicationTest {
             "/customers/{customerId}/accounts",
             null, Account::class.java,
             customer.id.id
-        )
-        assertEquals(account, newAccount.body!!)
+        ).body!!
+        assertEquals(account.copy(id = newAccount.id), newAccount)
     }
 
     @Test

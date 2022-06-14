@@ -14,10 +14,7 @@ import org.web3j.tx.gas.DefaultGasProvider
 @Component
 internal class EthereumConfiguration {
 
-    private lateinit var web3j: Web3j
-    private lateinit var gasProvider: ContractGasProvider
-
-    @Value("\${smallbank.ethereum.url:'${HttpService.DEFAULT_URL}'}")
+    @Value("\${smallbank.ethereum.url:${HttpService.DEFAULT_URL}}")
     private var url: String? = null
 
     @Bean
