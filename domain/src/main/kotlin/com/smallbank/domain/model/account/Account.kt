@@ -20,7 +20,9 @@ data class Account(
     }
 }
 
-data class AccountId(val id: String)
+data class AccountId(val id: String) {
+    override fun toString(): String = id
+}
 
 data class AccountMovement(
     val id: String,

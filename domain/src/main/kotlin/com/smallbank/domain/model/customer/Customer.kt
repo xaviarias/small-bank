@@ -9,7 +9,9 @@ data class Customer(
     val address: PersonalAddress
 )
 
-data class CustomerId(val id: String)
+data class CustomerId(val id: String) {
+    override fun toString(): String = id
+}
 
 data class PersonalName(val first: String, val last: String)
 
