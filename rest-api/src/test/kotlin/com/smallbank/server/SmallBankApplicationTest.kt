@@ -8,7 +8,6 @@ import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.domain.model.customer.PersonalAddress
 import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.ethereum.EthereumKeyVault
-import com.smallbank.infra.ethereum.web3j.SmallBank
 import com.smallbank.restapi.SmallBankApplication
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -25,8 +24,10 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
+import org.web3j.EVMTest
 import java.util.UUID
 
+@EVMTest
 @SpringBootTest(
     classes = [SmallBankApplication::class],
     webEnvironment = WebEnvironment.RANDOM_PORT
@@ -37,9 +38,6 @@ class SmallBankApplicationTest {
 
     @MockBean
     private lateinit var keyVault: EthereumKeyVault
-
-    @MockBean
-    private lateinit var contract: SmallBank
 
     @Autowired
     private lateinit var template: TestRestTemplate
