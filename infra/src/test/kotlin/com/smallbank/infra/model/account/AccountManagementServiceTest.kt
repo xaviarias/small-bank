@@ -37,7 +37,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -134,9 +133,10 @@ class AccountManagementServiceTest {
 
     @BeforeEach
     fun setUp() {
-        // Start with the Ethereum account key pair
+        // Mock Ethereum key vault
         val credentials = Credentials.create(SMALLBANK_PRIVATE_KEY)
         keyVault.store(SMALLBANK_ACCOUNT, credentials)
+        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Stub contract deployment and loading
         val deployCall = mock<RemoteFunctionCall<SmallBank>>()
@@ -155,12 +155,6 @@ class AccountManagementServiceTest {
 
     @AfterEach
     fun tearDown() {
-        reset(
-            accountRepositoryMock,
-            customerRepositoryMock,
-            movementsRepositoryMock,
-            contractMock
-        )
         staticContractMock.close()
     }
 
@@ -255,7 +249,6 @@ class AccountManagementServiceTest {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
-        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Deposit 1 ETH to the bank (account is ignored)
         service.deposit(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
@@ -279,7 +272,6 @@ class AccountManagementServiceTest {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
-        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Withdraw 1 ETH from the bank
         service.withdraw(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
@@ -304,7 +296,6 @@ class AccountManagementServiceTest {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
-        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         val balance = service.balance(AccountId(CUSTOMER_ACCOUNT))
         assertEquals(amount, balance.toBigInteger())
@@ -339,8 +330,6 @@ class AccountManagementServiceTest {
         movementsRepositoryMock.stub {
             on { findByAccountId(CUSTOMER_ACCOUNT) } doReturn listOf(deposit, withdrawal)
         }
-
-        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         val movements = service.movements(account.id)
         assertEquals(listOf(deposit.toPojo(), withdrawal.toPojo()), movements)
