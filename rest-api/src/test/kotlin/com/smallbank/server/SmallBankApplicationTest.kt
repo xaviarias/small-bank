@@ -12,18 +12,27 @@ import com.smallbank.infra.ethereum.web3j.SmallBank
 import com.smallbank.restapi.SmallBankApplication
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle
+import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpMethod
 import java.util.UUID
 
 @SpringBootTest(
     classes = [SmallBankApplication::class],
     webEnvironment = WebEnvironment.RANDOM_PORT
 )
+@TestInstance(Lifecycle.PER_CLASS)
+@TestMethodOrder(OrderAnnotation::class)
 class SmallBankApplicationTest {
 
     @MockBean
@@ -33,7 +42,7 @@ class SmallBankApplicationTest {
     private lateinit var contract: SmallBank
 
     @Autowired
-    private lateinit var restTemplate: TestRestTemplate
+    private lateinit var template: TestRestTemplate
 
     private val customer = Customer(
         CustomerId(UUID.randomUUID().toString()),
@@ -55,24 +64,74 @@ class SmallBankApplicationTest {
     )
 
     @Test
-    fun `list customers`() {
-        val customers = restTemplate.getForEntity("/customers", List::class.java)
+    @Order(1)
+    fun `list no customers`() {
+        val customers = template.getForEntity("/customers", List::class.java)
         assertTrue(customers.body!!.isEmpty())
     }
 
     @Test
+    @Order(2)
     fun `create customer`() {
-        val newCustomer = restTemplate.postForEntity(
+        val newCustomer = template.postForEntity(
             "/customers", customer, Customer::class.java
         )
         assertEquals(customer, newCustomer.body!!)
     }
 
     @Test
+    @Order(3)
+    fun `list customers contains the created customer`() {
+        val customers = template.exchange(
+            "/customers",
+            HttpMethod.GET,
+            null,
+            CUSTOMER_LIST
+        ).body!!
+        println(customers.first().id)
+        println(customer.id)
+        assertTrue(customers.contains(customer))
+    }
+
+    @Test
+    @Order(4)
+    fun `list no accounts`() {
+        val accounts = template.getForEntity(
+            "/customer/${customer.id}/accounts",
+            List::class.java
+        )
+        assertTrue(accounts.body!!.isEmpty())
+    }
+
+    @Test
+    @Order(5)
     fun `create account`() {
-        val newAccount = restTemplate.postForEntity(
-            "/accounts", account, Account::class.java
+        val newAccount = template.postForEntity(
+            "/customer/${customer.id}/accounts",
+            null, Account::class.java
         )
         assertEquals(account, newAccount.body!!)
+    }
+
+    @Test
+    @Order(6)
+    fun `list one account`() {
+        val accounts = template.exchange(
+            "/customer/${customer.id}/accounts",
+            HttpMethod.GET,
+            null,
+            ACCOUNT_LIST
+        ).body!!
+        with(accounts) {
+            assertTrue(size == 1)
+            with(first().id) {
+                assertTrue(contains(account.copy(id = this)))
+            }
+        }
+    }
+
+    companion object {
+        private val CUSTOMER_LIST = object : ParameterizedTypeReference<List<Customer>>() {}
+        private val ACCOUNT_LIST = object : ParameterizedTypeReference<List<Account>>() {}
     }
 }
