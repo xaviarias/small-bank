@@ -10,7 +10,10 @@ class AccountMovementResourceImpl(
     private val accountService: AccountManagementService
 ) : AccountMovementResource {
 
-    override fun findAll(accountId: String): List<AccountMovement> {
+    override fun findAll(
+        customerId: String,
+        accountId: String
+    ): List<AccountMovement> {
         return accountService.movements(AccountId(accountId))
     }
 }

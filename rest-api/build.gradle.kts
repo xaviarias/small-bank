@@ -5,6 +5,10 @@ plugins {
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
 }
 
+springBoot {
+    mainClass.set("com.smallbank.restapi.SmallBankApplicationKt")
+}
+
 repositories {
     maven { url = URI("https://hyperledger.jfrog.io/artifactory/besu-maven/") }
     maven { url = URI("https://artifacts.consensys.net/public/maven/maven/") }
@@ -15,6 +19,7 @@ repositories {
 dependencies {
     implementation(project(":smallbank-domain"))
     implementation(project(":smallbank-infra"))
+    implementation("org.web3j:core:4.9.2")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
