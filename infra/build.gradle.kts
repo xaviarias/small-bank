@@ -25,6 +25,7 @@ dependencies {
     //implementation("org.springframework.boot:spring-boot-starter-security")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito:mockito-inline:4.5.1")
     testImplementation("org.web3j:web3j-unit:4.9.2")
     runtimeOnly("com.h2database:h2:2.1.212")
 }

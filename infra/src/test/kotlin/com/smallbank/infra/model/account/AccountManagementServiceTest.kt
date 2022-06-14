@@ -12,24 +12,36 @@ import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.config.SmallBankConfiguration
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toWei
+import com.smallbank.infra.ethereum.web3j.CONTRACT_ADDRESS
 import com.smallbank.infra.ethereum.web3j.CUSTOMER_ACCOUNT
+import com.smallbank.infra.ethereum.web3j.CUSTOMER_PRIVATE_KEY
+import com.smallbank.infra.ethereum.web3j.SMALLBANK_ACCOUNT
+import com.smallbank.infra.ethereum.web3j.SMALLBANK_PRIVATE_KEY
 import com.smallbank.infra.ethereum.web3j.SmallBank
 import com.smallbank.infra.ethereum.web3j.SmallBank.AccountDepositEventResponse
 import com.smallbank.infra.ethereum.web3j.SmallBank.AccountWithdrawalEventResponse
+import com.smallbank.infra.ethereum.web3j.SmallBank.deploy
+import com.smallbank.infra.ethereum.web3j.SmallBank.load
 import com.smallbank.infra.model.customer.JpaCustomerRepository
 import com.smallbank.infra.model.customer.toEntity
 import io.reactivex.Flowable
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.MockedStatic
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
@@ -40,11 +52,13 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.ActiveProfiles
 import org.web3j.crypto.Credentials
+import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.Log
 import org.web3j.protocol.core.methods.response.TransactionReceipt
+import org.web3j.tx.gas.ContractGasProvider
 import org.web3j.utils.Convert
 import java.math.BigInteger
 import java.time.Clock
@@ -67,22 +81,30 @@ class AccountManagementServiceTest {
     private lateinit var service: AccountManagementService
 
     @Autowired
+    private lateinit var keyVault: EthereumKeyVault
+
+    @Autowired
+    private lateinit var web3j: Web3j
+
+    @Autowired
+    private lateinit var gasProvider: ContractGasProvider
+
+    @Autowired
     private lateinit var clock: Clock
 
     @MockBean
-    private lateinit var accountRepository: JpaAccountRepository
+    private lateinit var accountRepositoryMock: JpaAccountRepository
 
     @MockBean
-    private lateinit var customerRepository: JpaCustomerRepository
+    private lateinit var customerRepositoryMock: JpaCustomerRepository
 
     @MockBean
-    private lateinit var movementsRepository: JpaAccountMovementRepository
+    private lateinit var movementsRepositoryMock: JpaAccountMovementRepository
 
     @MockBean
-    private lateinit var keyVault: EthereumKeyVault
+    private lateinit var contractMock: SmallBank
 
-    @MockBean
-    private lateinit var contract: SmallBank
+    private lateinit var staticContractMock: MockedStatic<SmallBank>
 
     @Configuration
     open class TestConfiguration {
@@ -110,12 +132,45 @@ class AccountManagementServiceTest {
         AccountType.ETHEREUM
     )
 
+    @BeforeEach
+    fun setUp() {
+        // Start with the Ethereum account key pair
+        val credentials = Credentials.create(SMALLBANK_PRIVATE_KEY)
+        keyVault.store(SMALLBANK_ACCOUNT, credentials)
+
+        // Stub contract deployment and loading
+        val deployCall = mock<RemoteFunctionCall<SmallBank>>()
+        deployCall.stub { on { send() } doReturn contractMock }
+
+        staticContractMock = mockStatic(SmallBank::class.java).apply {
+            whenever(deploy(web3j, credentials, gasProvider)) doReturn deployCall
+            whenever(load(CONTRACT_ADDRESS, web3j, credentials, gasProvider)) doReturn contractMock
+        }
+
+        // Stub contract methods
+        contractMock.stub {
+            on { contractAddress } doReturn CONTRACT_ADDRESS
+        }
+    }
+
+    @AfterEach
+    fun tearDown() {
+        reset(
+            accountRepositoryMock,
+            customerRepositoryMock,
+            movementsRepositoryMock,
+            contractMock
+        )
+        staticContractMock.close()
+    }
+
     @Test
     fun `create account should save a new account in the repository, store its credentials in the key vault and subscribe to events`() {
         val persistentCustomer = customer.toEntity()
         val persistentAccount = AtomicReference<PersistentAccount>()
 
-        accountRepository.stub {
+        // Stub repositories
+        accountRepositoryMock.stub {
             onGeneric { save(any()) } doAnswer {
                 val accountId = (it.arguments[0] as PersistentAccount).id
                 with(persistentAccount) {
@@ -124,13 +179,13 @@ class AccountManagementServiceTest {
                 }
             }
         }
-
-        customerRepository.stub {
+        customerRepositoryMock.stub {
             on {
                 findById(customer.id.id)
             } doReturn Optional.of(persistentCustomer)
         }
 
+        // Stub contract emitted events
         val depositEvent = AccountDepositEventResponse().apply {
             account = CUSTOMER_ACCOUNT
             amount = 1.toWei(Convert.Unit.ETHER)
@@ -141,8 +196,7 @@ class AccountManagementServiceTest {
             amount = 1.toWei(Convert.Unit.ETHER)
             log = Log().apply { transactionHash = "0x1" }
         }
-
-        contract.stub {
+        contractMock.stub {
             on {
                 accountDepositEventFlowable(EARLIEST, LATEST)
             } doReturn Flowable.just(depositEvent)
@@ -151,21 +205,21 @@ class AccountManagementServiceTest {
             } doReturn Flowable.just(withdrawEvent)
         }
 
+        // Create new account
         val createdAccount = service.create(customer.id)
 
+        // Verify repositories
         with(persistentAccount.get()) {
             assertEquals(toPojo(), createdAccount)
-            verify(accountRepository).save(this)
-            verify(movementsRepository).save(depositEvent.toEntity(this, clock))
-            verify(movementsRepository).save(withdrawEvent.toEntity(this, clock))
+            verify(accountRepositoryMock).save(this)
+            verify(movementsRepositoryMock).save(depositEvent.toEntity(this, clock))
+            verify(movementsRepositoryMock).save(withdrawEvent.toEntity(this, clock))
         }
 
-        val accountCaptor = argumentCaptor<String>()
-        val credentialsCaptor = argumentCaptor<Credentials>()
-        verify(keyVault).store(accountCaptor.capture(), credentialsCaptor.capture())
-
-        verify(contract).accountDepositEventFlowable(EARLIEST, LATEST)
-        verify(contract).accountWithdrawalEventFlowable(EARLIEST, LATEST)
+        // Verify key vault and contract events
+        assertNotNull(keyVault.resolve(createdAccount.id.id))
+        verify(contractMock).accountDepositEventFlowable(EARLIEST, LATEST)
+        verify(contractMock).accountWithdrawalEventFlowable(EARLIEST, LATEST)
     }
 
     @Test
@@ -174,19 +228,17 @@ class AccountManagementServiceTest {
             it.copy(accounts = listOf(account.toEntity(it)))
         }
 
-        customerRepository.stub {
+        customerRepositoryMock.stub {
             on {
                 findById(customer.id.id)
             } doReturn Optional.of(persistentCustomer)
         }
-
         assertThrows<IllegalStateException> {
             service.create(customer.id)
         }
 
-        verify(customerRepository).findById(customer.id.id)
-        verifyNoInteractions(keyVault)
-        verifyNoInteractions(accountRepository)
+        verify(customerRepositoryMock).findById(customer.id.id)
+        verifyNoInteractions(accountRepositoryMock)
     }
 
     @Test
@@ -194,21 +246,22 @@ class AccountManagementServiceTest {
 
         val depositCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
-        contract.stub {
+        contractMock.stub {
             on { deposit(amount) } doReturn depositCall
         }
 
-        accountRepository.stub {
+        accountRepositoryMock.stub {
             on {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
+        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Deposit 1 ETH to the bank (account is ignored)
         service.deposit(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
 
-        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
-        verify(contract).deposit(amount)
+        verify(accountRepositoryMock).findById(CUSTOMER_ACCOUNT)
+        verify(contractMock).deposit(amount)
         verify(depositCall).send()
     }
 
@@ -217,21 +270,22 @@ class AccountManagementServiceTest {
 
         val withdrawCall = mock<RemoteFunctionCall<TransactionReceipt>> {}
         val amount = 1.toWei(Convert.Unit.ETHER)
-        contract.stub {
+
+        contractMock.stub {
             on { withdraw(amount) } doReturn withdrawCall
         }
-
-        accountRepository.stub {
+        accountRepositoryMock.stub {
             on {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
+        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Withdraw 1 ETH from the bank
         service.withdraw(AccountId(CUSTOMER_ACCOUNT), amount.toBigDecimal())
 
-        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
-        verify(contract).withdraw(amount)
+        verify(accountRepositoryMock).findById(CUSTOMER_ACCOUNT)
+        verify(contractMock).withdraw(amount)
         verify(withdrawCall).send()
     }
 
@@ -241,21 +295,22 @@ class AccountManagementServiceTest {
         val balanceCall = mock<RemoteFunctionCall<BigInteger>> {
             on { send() } doReturn amount
         }
-        contract.stub {
+        contractMock.stub {
             on { balance() } doReturn balanceCall
         }
 
-        accountRepository.stub {
+        accountRepositoryMock.stub {
             on {
                 findById(CUSTOMER_ACCOUNT)
             } doReturn Optional.of(account.toEntity(customer.toEntity()))
         }
+        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         val balance = service.balance(AccountId(CUSTOMER_ACCOUNT))
         assertEquals(amount, balance.toBigInteger())
 
-        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
-        verify(contract).balance()
+        verify(accountRepositoryMock).findById(CUSTOMER_ACCOUNT)
+        verify(contractMock).balance()
         verify(balanceCall).send()
     }
 
@@ -263,7 +318,7 @@ class AccountManagementServiceTest {
     fun `movements should list deposits and withdrawals`() {
         val persistentAccount = account.toEntity(customer.toEntity())
 
-        accountRepository.stub {
+        accountRepositoryMock.stub {
             on { findById(CUSTOMER_ACCOUNT) } doReturn Optional.of(persistentAccount)
         }
 
@@ -281,14 +336,16 @@ class AccountManagementServiceTest {
             MovementType.WITHDRAW,
             100000.toBigDecimal()
         )
-        movementsRepository.stub {
+        movementsRepositoryMock.stub {
             on { findByAccountId(CUSTOMER_ACCOUNT) } doReturn listOf(deposit, withdrawal)
         }
+
+        keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         val movements = service.movements(account.id)
         assertEquals(listOf(deposit.toPojo(), withdrawal.toPojo()), movements)
 
-        verify(accountRepository).findById(CUSTOMER_ACCOUNT)
-        verify(movementsRepository).findByAccountId(account.id.id)
+        verify(accountRepositoryMock).findById(CUSTOMER_ACCOUNT)
+        verify(movementsRepositoryMock).findByAccountId(account.id.id)
     }
 }
