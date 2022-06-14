@@ -126,7 +126,8 @@ internal class AccountManagementServiceImpl(
         )
     }
 
-    private fun deployContract(credentials: Credentials): String {
+    private fun deployContract(): String {
+        val credentials = resolveCredentials(ethereumAccount!!)
         return SmallBank.deploy(
             web3j,
             credentials,
@@ -138,8 +139,7 @@ internal class AccountManagementServiceImpl(
         require(ethereumAccount != null) { "No Ethereum account defined!" }
 
         if (contractAddress == null) {
-            val ownerCredentials = resolveCredentials(ethereumAccount!!)
-            contractAddress = deployContract(ownerCredentials)
+            contractAddress = deployContract()
         }
         return SmallBank.load(
             contractAddress,
