@@ -15,8 +15,8 @@ internal open class InMemoryEthereumKeyVault : EthereumKeyVault {
 
     private val keys: ConcurrentMap<String, Credentials> = ConcurrentHashMap()
 
-    override fun store(credentials: Credentials) {
-        keys.putIfAbsent(credentials.ecKeyPair.publicKey.toHexString(), credentials)
+    override fun store(account: String, credentials: Credentials) {
+        keys.putIfAbsent(account, credentials)
     }
 
     override fun resolve(account: String) = keys[account]

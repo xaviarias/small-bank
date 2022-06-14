@@ -9,7 +9,7 @@ import com.smallbank.domain.model.customer.Customer
 import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.domain.model.customer.PersonalAddress
 import com.smallbank.domain.model.customer.PersonalName
-import com.smallbank.infra.SmallBankConfiguration
+import com.smallbank.infra.config.SmallBankConfiguration
 import com.smallbank.infra.ethereum.EthereumKeyVault
 import com.smallbank.infra.ethereum.toWei
 import com.smallbank.infra.ethereum.web3j.CUSTOMER_ACCOUNT
@@ -160,8 +160,9 @@ class AccountManagementServiceTest {
             verify(movementsRepository).save(withdrawEvent.toEntity(this, clock))
         }
 
+        val accountCaptor = argumentCaptor<String>()
         val credentialsCaptor = argumentCaptor<Credentials>()
-        verify(keyVault).store(credentialsCaptor.capture())
+        verify(keyVault).store(accountCaptor.capture(), credentialsCaptor.capture())
 
         verify(contract).accountDepositEventFlowable(EARLIEST, LATEST)
         verify(contract).accountWithdrawalEventFlowable(EARLIEST, LATEST)

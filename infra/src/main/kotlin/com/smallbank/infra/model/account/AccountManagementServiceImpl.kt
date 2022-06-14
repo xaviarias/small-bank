@@ -8,17 +8,21 @@ import com.smallbank.domain.model.account.AccountMovement
 import com.smallbank.domain.model.account.AccountMovement.MovementType
 import com.smallbank.domain.model.customer.CustomerId
 import com.smallbank.infra.ethereum.EthereumKeyVault
-import com.smallbank.infra.ethereum.toHexString
 import com.smallbank.infra.ethereum.web3j.SmallBank
 import com.smallbank.infra.ethereum.web3j.SmallBank.AccountDepositEventResponse
 import com.smallbank.infra.ethereum.web3j.SmallBank.AccountWithdrawalEventResponse
 import com.smallbank.infra.model.customer.JpaCustomerRepository
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.Keys
+import org.web3j.crypto.Wallet
+import org.web3j.crypto.WalletFile
+import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
+import org.web3j.tx.gas.ContractGasProvider
 import java.math.BigDecimal
 import java.security.SecureRandom
 import java.time.Clock
@@ -27,15 +31,22 @@ import java.time.LocalDateTime
 @Service
 @Qualifier("ethereum")
 internal class AccountManagementServiceImpl(
+
+    @Value("\${smallbank.ethereum.account}")
+    private var ethereumAccount: String? = null,
+
+    @Value("\${smallbank.ethereum.contract.address:#{null}}")
+    private var contractAddress: String? = null,
+
     private val accountRepository: JpaAccountRepository,
     private val customerRepository: JpaCustomerRepository,
     private val movementRepository: JpaAccountMovementRepository,
-    private val keyRepository: EthereumKeyVault,
-    private val smallBank: SmallBank,
+    private val keyVault: EthereumKeyVault,
+    private val web3j: Web3j,
+    private val gasProvider: ContractGasProvider,
+    private val random: SecureRandom,
     private val clock: Clock
 ) : AccountManagementService {
-
-    private val random = SecureRandom()
 
     override fun create(customerId: CustomerId): Account {
         val customer = customerRepository.findById(customerId.id).orElseThrow()
@@ -45,10 +56,12 @@ internal class AccountManagementServiceImpl(
             throw IllegalStateException("Already existing account for customer: $customerId")
         }
 
-        val keyPair = Keys.createEcKeyPair(random)
-        keyRepository.store(Credentials.create(keyPair))
+        val ecKeyPair = Keys.createEcKeyPair(random)
+        val wallet: WalletFile = Wallet.createLight("", ecKeyPair)
 
-        val accountId = AccountId(keyPair.publicKey.toHexString())
+        keyVault.store(wallet.address, Credentials.create(ecKeyPair))
+
+        val accountId = AccountId(wallet.address)
         val account = Account(accountId, customerId, AccountType.ETHEREUM).toEntity(customer)
 
         return accountRepository.save(account).toPojo().also {
@@ -60,24 +73,30 @@ internal class AccountManagementServiceImpl(
         return accountRepository.findById(accountId.id).orElseThrow().toPojo()
     }
 
-    override fun list(customerId: CustomerId): List<Account> {
+    override fun findByCustomer(customerId: CustomerId): List<Account> {
         customerRepository.findById(customerId.id).orElseThrow()
         return accountRepository.findByCustomerId(customerId.id).map { it.toPojo() }
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
         accountRepository.findById(accountId.id).orElseThrow()
-        smallBank.deposit(amount.toBigInteger()).send()
+
+        val credentials = resolveCredentials(accountId.id)
+        loadContract(credentials).deposit(amount.toBigInteger()).send()
     }
 
     override fun withdraw(accountId: AccountId, amount: BigDecimal) {
         accountRepository.findById(accountId.id).orElseThrow()
-        smallBank.withdraw(amount.toBigInteger()).send()
+
+        val credentials = resolveCredentials(accountId.id)
+        loadContract(credentials).withdraw(amount.toBigInteger()).send()
     }
 
     override fun balance(accountId: AccountId): BigDecimal {
         accountRepository.findById(accountId.id).orElseThrow()
-        return smallBank.balance().send().toBigDecimal()
+
+        val credentials = resolveCredentials(accountId.id)
+        return loadContract(credentials).balance().send().toBigDecimal()
     }
 
     // TODO Support date intervals
@@ -88,15 +107,46 @@ internal class AccountManagementServiceImpl(
 
     /**
      * FIXME Filter events by account id.
-     * FIXME Sync database only with delta.
+     * FIXME Sync database only with delta blocks.
      */
     private fun subscribeToMovements(account: PersistentAccount) {
-        smallBank.accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
+        val credentials = resolveCredentials(ethereumAccount!!)
+
+        loadContract(credentials).accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
             movementRepository.save(it.toEntity(account, clock))
         }
-        smallBank.accountWithdrawalEventFlowable(EARLIEST, LATEST).subscribe {
+        loadContract(credentials).accountWithdrawalEventFlowable(EARLIEST, LATEST).subscribe {
             movementRepository.save(it.toEntity(account, clock))
         }
+    }
+
+    private fun resolveCredentials(account: String): Credentials {
+        return keyVault.resolve(account) ?: throw IllegalStateException(
+            "Account credentials not found in key vault: $account"
+        )
+    }
+
+    private fun deployContract(credentials: Credentials): String {
+        return SmallBank.deploy(
+            web3j,
+            credentials,
+            gasProvider
+        ).send().contractAddress
+    }
+
+    private fun loadContract(credentials: Credentials): SmallBank {
+        require(ethereumAccount != null) { "No Ethereum account defined!" }
+
+        if (contractAddress == null) {
+            val ownerCredentials = resolveCredentials(ethereumAccount!!)
+            contractAddress = deployContract(ownerCredentials)
+        }
+        return SmallBank.load(
+            contractAddress,
+            web3j,
+            credentials,
+            gasProvider
+        )
     }
 }
 

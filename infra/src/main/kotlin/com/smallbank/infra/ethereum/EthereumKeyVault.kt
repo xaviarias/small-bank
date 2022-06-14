@@ -6,6 +6,6 @@ import org.web3j.crypto.Credentials
  * Customer key repository to store sensitive data externally.
  */
 interface EthereumKeyVault {
-    fun store(credentials: Credentials)
+    fun store(account: String, credentials: Credentials)
     fun resolve(account: String): Credentials?
 }
