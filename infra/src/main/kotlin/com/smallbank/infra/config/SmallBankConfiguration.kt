@@ -14,9 +14,9 @@ import java.security.SecureRandom
 import java.time.Clock
 
 @Configuration
-@ComponentScan
 @EntityScan("com.smallbank.infra.model")
 @EnableJpaRepositories("com.smallbank.infra.model")
+@ComponentScan(basePackages = ["com.smallbank.infra"])
 internal open class SmallBankConfiguration {
 
     @Bean
