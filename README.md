@@ -51,9 +51,10 @@ The web application implements a REST API which invokes the SmallBank services d
 
 ## Building and testing
 
-To build the project and run the tests, run the command:
+To build the project and run the tests, run the commands:
 
 ```
+./gradlew generateContractWrappers 
 ./gradlew build 
 ```
 
