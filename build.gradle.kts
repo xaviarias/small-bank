@@ -27,6 +27,8 @@ subprojects {
                 force("org.mockito:mockito-junit-jupiter:4.5.1")
                 force("org.apache.logging.log4j:log4j-api:2.17.2")
                 force("ch.qos.logback:logback-classic:1.2.11")
+                force("net.bytebuddy:byte-buddy:1.12.10")
+                force("net.bytebuddy:byte-buddy-agent:1.12.10")
                 force("org.slf4j:slf4j-api:1.7.36")
                 force("org.ow2.asm:asm:9.2")
                 force("org.ow2.asm:asm-analisys:9.2")
