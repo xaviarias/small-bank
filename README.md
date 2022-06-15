@@ -30,10 +30,6 @@ Items that are important:
 The project is split between three Gradle submodules, which correspond to the hexagonal architecture concepts
 of Domain Model, Ports and Application Services, and Adapters.
 
-For simplicity, I have defined in the same domain the customer and account-related elements,
-although conceptually they could be considered as different subdomains and bounded contexts.
-This is reflected in the package structure, that follows the DDD concept of modules.
-
 ### Domain
 
 Corresponds to the DDD concept of ubiquitous language. Contains domain objects and application services,
