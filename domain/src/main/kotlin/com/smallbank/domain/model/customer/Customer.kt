@@ -12,7 +12,10 @@ data class Customer(
     val address: PersonalAddress
 )
 
-data class CustomerId(val id: String) {
+data class CustomerId(
+    @NotBlank
+    val id: String
+) {
     override fun toString(): String = id
 }
 

@@ -3,6 +3,7 @@ package com.smallbank.domain.model.account
 import com.smallbank.domain.model.customer.CustomerId
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Past
 import javax.validation.constraints.PositiveOrZero
 
@@ -22,7 +23,10 @@ data class Account(
     }
 }
 
-data class AccountId(val id: String) {
+data class AccountId(
+    @NotBlank
+    val id: String
+) {
     override fun toString(): String = id
 }
 
