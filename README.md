@@ -76,9 +76,9 @@ The REST API application requires some configuration to run:
 * `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
 * `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
 
-### Run the REST API
+## Running the REST API
 
-Run the commands:
+After building the project, run the commands:
 
 ```
 cd rest-api
