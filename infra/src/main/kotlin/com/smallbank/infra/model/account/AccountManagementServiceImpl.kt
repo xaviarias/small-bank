@@ -49,7 +49,7 @@ internal class AccountManagementServiceImpl(
 ) : AccountManagementService {
 
     override fun create(customerId: CustomerId): Account {
-        val customer = customerRepository.findById(customerId.id).orElseThrow()
+        val customer = customerRepository.findById(customerId.id).get()
 
         // Ensure only one Ethereum account exists per customer
         if (customer.accounts.any { it.type == AccountType.ETHEREUM }) {
@@ -70,30 +70,30 @@ internal class AccountManagementServiceImpl(
     }
 
     override fun find(accountId: AccountId): Account {
-        return accountRepository.findById(accountId.id).orElseThrow().toPojo()
+        return accountRepository.findById(accountId.id).get().toPojo()
     }
 
     override fun findByCustomer(customerId: CustomerId): List<Account> {
-        customerRepository.findById(customerId.id).orElseThrow()
+        customerRepository.findById(customerId.id).get()
         return accountRepository.findByCustomerId(customerId.id).map { it.toPojo() }
     }
 
     override fun deposit(accountId: AccountId, amount: BigDecimal) {
-        accountRepository.findById(accountId.id).orElseThrow()
+        accountRepository.findById(accountId.id).get()
 
         val credentials = resolveCredentials(accountId.id)
         loadContract(credentials).deposit(amount.toBigInteger()).send()
     }
 
     override fun withdraw(accountId: AccountId, amount: BigDecimal) {
-        accountRepository.findById(accountId.id).orElseThrow()
+        accountRepository.findById(accountId.id).get()
 
         val credentials = resolveCredentials(accountId.id)
         loadContract(credentials).withdraw(amount.toBigInteger()).send()
     }
 
     override fun balance(accountId: AccountId): BigDecimal {
-        accountRepository.findById(accountId.id).orElseThrow()
+        accountRepository.findById(accountId.id).get()
 
         val credentials = resolveCredentials(accountId.id)
         return loadContract(credentials).balance().send().toBigDecimal()
@@ -101,7 +101,7 @@ internal class AccountManagementServiceImpl(
 
     // TODO Support date intervals
     override fun movements(accountId: AccountId): List<AccountMovement> {
-        accountRepository.findById(accountId.id).orElseThrow()
+        accountRepository.findById(accountId.id).get()
         return movementRepository.findByAccountId(accountId.id).map { it.toPojo() }
     }
 

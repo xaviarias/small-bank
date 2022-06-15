@@ -16,13 +16,13 @@ internal open class AccountRepositoryImpl(
 ) : AccountRepository {
 
     override fun create(account: Account): Account {
-        val customer = customerRepository.findById(account.customerId.id).orElseThrow()
+        val customer = customerRepository.findById(account.customerId.id).get()
         val persistentAccount = account.toEntity(customer)
         return delegate.save(persistentAccount).toPojo()
     }
 
     override fun update(account: Account): Account {
-        val customer = customerRepository.findById(account.customerId.id).orElseThrow()
+        val customer = customerRepository.findById(account.customerId.id).get()
         val persistentAccount = account.toEntity(customer)
         return delegate.save(persistentAccount).toPojo()
     }

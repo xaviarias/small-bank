@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.6.21"
+    java
 }
 
 allprojects {
@@ -41,7 +42,7 @@ subprojects {
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjsr305=strict")
-            jvmTarget = "1.8"
+            jvmTarget = "11"
         }
     }
     tasks.test {
@@ -51,4 +52,8 @@ subprojects {
             showStandardStreams = true
         }
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
 }
