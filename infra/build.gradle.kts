@@ -8,6 +8,10 @@ plugins {
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
 }
 
+springBoot {
+    mainClass.set("com.smallbank.infra.SmallBankApplicationKt")
+}
+
 repositories {
     maven { url = URI("https://hyperledger.jfrog.io/artifactory/besu-maven/") }
     maven { url = URI("https://artifacts.consensys.net/public/maven/maven/") }
@@ -22,7 +26,6 @@ web3j {
 dependencies {
     implementation(project(":smallbank-domain"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    //implementation("org.springframework.boot:spring-boot-starter-security")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito:mockito-inline:4.5.1")
