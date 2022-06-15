@@ -31,7 +31,7 @@ class WithdrawTest : SmallBankTest() {
         gasProvider: ContractGasProvider
     ) {
         // Retrieve initial balance
-        val initialBalance = web3j.ethGetBalance(SMALLBANK_ACCOUNT)
+        // val initialBalance = web3j.ethGetBalance(SMALLBANK_ACCOUNT)
 
         // Deposit and withdraw 1 ETH to the bank
         val amount = 1.toWei(Convert.Unit.ETHER)
@@ -41,8 +41,8 @@ class WithdrawTest : SmallBankTest() {
         val contractBalance = web3j.ethGetBalance(smallBank.contractAddress)
         Assertions.assertEquals(BigInteger.ZERO, contractBalance)
 
-        val totalGas = (depositReceipt.gasUsed * gasProvider.getGasPrice("deposit")) +
-                (withdrawReceipt.gasUsed * gasProvider.getGasPrice("withdraw"))
+        // val totalGas = (depositReceipt.gasUsed * gasProvider.getGasPrice("deposit")) +
+        //        (withdrawReceipt.gasUsed * gasProvider.getGasPrice("withdraw"))
 
         // Balance should be the initial minus the gas costs
         // val expectedBalance = initialBalance - totalGas
