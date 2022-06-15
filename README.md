@@ -20,8 +20,9 @@ Items that are important:
 
 ## Dependencies
 
-* Java 11
 * Web3j
+* Kotlin
+* Java 11
 * Spring Boot
 * Docker (to run tests)
 
@@ -63,16 +64,15 @@ To build the project and run the tests, run the commands:
 
 The project requires a Docker environment to run the tests.
 
-### Configuration
+## Running the REST API
 
-The REST API application requires some configuration to run:
+Before running the app, check the Spring Boot configuration properties.
+The Ethereum account is the only mandatory.
 
 * `smallbank.ethereum.url`: The Ethereum endpoint (defaults to `http://localhost:8545/`).
 * `smallbank.ethereum.account`: The admin account to deploy the initial contract (mandatory).
 * `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
 * `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
-
-## Running the REST API
 
 After building the project, run the commands:
 
