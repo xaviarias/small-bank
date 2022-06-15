@@ -3,6 +3,8 @@ package com.smallbank.domain.model.account
 import com.smallbank.domain.model.customer.CustomerId
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import javax.validation.constraints.Past
+import javax.validation.constraints.PositiveOrZero
 
 data class Account(
     val id: AccountId,
@@ -26,9 +28,11 @@ data class AccountId(val id: String) {
 
 data class AccountMovement(
     val id: String,
+    @Past
     val timestamp: LocalDateTime,
     val accountId: AccountId,
     val type: MovementType,
+    @PositiveOrZero
     val amount: BigDecimal
 ) {
     enum class MovementType {

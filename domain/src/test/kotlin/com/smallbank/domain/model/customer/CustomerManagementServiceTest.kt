@@ -8,6 +8,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import java.util.UUID
+import javax.validation.Validator
 
 class CustomerManagementServiceTest {
 
@@ -25,39 +26,53 @@ class CustomerManagementServiceTest {
     )
 
     private lateinit var service: CustomerManagementService
-    private lateinit var repository: CustomerRepository
+    private lateinit var repositoryMock: CustomerRepository
+    private lateinit var validatorMock: Validator
 
     @BeforeEach
     fun setUp() {
-        repository = mock {}
-        service = CustomerManagementServiceImpl(repository)
+        repositoryMock = mock {}
+        validatorMock = mock {}
+        service = CustomerManagementServiceImpl(repositoryMock, validatorMock)
     }
 
     @Test
-    fun `create should save a new customer in the repository`() {
+    fun `create should validate and save the new customer in the repository`() {
+        validatorMock.stub { on { validate(customer) } doReturn emptySet() }
+
         service.create(customer)
-        verify(repository).create(customer)
+        verify(repositoryMock).create(customer)
+        verify(validatorMock).validate(customer)
+    }
+
+    @Test
+    fun `create should validate and update the customer in the repository`() {
+        validatorMock.stub { on { validate(customer) } doReturn emptySet() }
+
+        service.update(customer)
+        verify(repositoryMock).update(customer)
+        verify(validatorMock).validate(customer)
     }
 
     @Test
     fun `find by id should return the customer from the repository`() {
-        repository.stub {
+        repositoryMock.stub {
             on { findById(customer.id) } doReturn customer
         }
 
         val returnCustomer = service.findById(customer.id)
         Assertions.assertEquals(customer, returnCustomer)
-        verify(repository).findById(customer.id)
+        verify(repositoryMock).findById(customer.id)
     }
 
     @Test
     fun `find all should return all customers from the repository`() {
-        repository.stub {
+        repositoryMock.stub {
             on { findAll() } doReturn listOf(customer)
         }
 
         val allCustomers = service.findAll()
         Assertions.assertEquals(listOf(customer), allCustomers)
-        verify(repository).findAll()
+        verify(repositoryMock).findAll()
     }
 }

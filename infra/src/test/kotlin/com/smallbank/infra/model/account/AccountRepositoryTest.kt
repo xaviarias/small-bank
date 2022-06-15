@@ -22,7 +22,6 @@ open class AccountRepositoryTest {
 
     private lateinit var accountRepository: AccountRepository
     private lateinit var customerRepository: CustomerRepository
-    private lateinit var movementsRepository: JpaAccountMovementRepository
 
     @Autowired
     private lateinit var jpaAccountRepository: JpaAccountRepository

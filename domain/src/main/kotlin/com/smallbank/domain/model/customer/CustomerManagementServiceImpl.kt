@@ -1,14 +1,24 @@
 package com.smallbank.domain.model.customer
 
+import javax.validation.ConstraintViolationException
+import javax.validation.Validator
+
 /**
  * Customer management business logic.
  */
 class CustomerManagementServiceImpl(
-    private val customerRepository: CustomerRepository
+    private val customerRepository: CustomerRepository,
+    private val validator: Validator
 ) : CustomerManagementService {
 
     override fun create(customer: Customer): Customer {
+        customer.validateOrThrow(validator)
         return customerRepository.create(customer)
+    }
+
+    override fun update(customer: Customer): Customer {
+        customer.validateOrThrow(validator)
+        return customerRepository.update(customer)
     }
 
     override fun findById(customerId: CustomerId): Customer? {
@@ -17,5 +27,11 @@ class CustomerManagementServiceImpl(
 
     override fun findAll(): List<Customer> {
         return customerRepository.findAll()
+    }
+
+    private fun Any.validateOrThrow(validator: Validator) {
+        validator.validate(this).also {
+            if (it.isNotEmpty()) throw ConstraintViolationException(it)
+        }
     }
 }

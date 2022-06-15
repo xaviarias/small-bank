@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Scope
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import java.security.SecureRandom
 import java.time.Clock
+import javax.validation.Validation
+import javax.validation.Validator
 
 @Configuration
 @EntityScan("com.smallbank.infra.model")
@@ -21,8 +23,15 @@ internal open class SmallBankConfiguration {
 
     @Bean
     @Scope(BeanDefinition.SCOPE_SINGLETON)
-    open fun customerService(repository: CustomerRepository): CustomerManagementService {
-        return CustomerManagementServiceImpl(repository)
+    open fun validator(): Validator = Validation.buildDefaultValidatorFactory().validator
+
+    @Bean
+    @Scope(BeanDefinition.SCOPE_SINGLETON)
+    open fun customerService(
+        repository: CustomerRepository,
+        validator: Validator
+    ): CustomerManagementService {
+        return CustomerManagementServiceImpl(repository, validator)
     }
 
     @Bean
