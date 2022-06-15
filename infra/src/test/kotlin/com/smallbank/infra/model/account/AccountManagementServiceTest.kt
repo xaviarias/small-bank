@@ -51,13 +51,11 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.ActiveProfiles
 import org.web3j.crypto.Credentials
-import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.Log
 import org.web3j.protocol.core.methods.response.TransactionReceipt
-import org.web3j.tx.gas.ContractGasProvider
 import org.web3j.utils.Convert
 import java.math.BigInteger
 import java.time.Clock
@@ -81,12 +79,6 @@ class AccountManagementServiceTest {
 
     @Autowired
     private lateinit var keyVault: EthereumKeyVault
-
-    @Autowired
-    private lateinit var web3j: Web3j
-
-    @Autowired
-    private lateinit var gasProvider: ContractGasProvider
 
     @Autowired
     private lateinit var clock: Clock
@@ -134,8 +126,7 @@ class AccountManagementServiceTest {
     @BeforeEach
     fun setUp() {
         // Mock Ethereum key vault
-        val credentials = Credentials.create(SMALLBANK_PRIVATE_KEY)
-        keyVault.store(SMALLBANK_ACCOUNT, credentials)
+        keyVault.store(SMALLBANK_ACCOUNT, Credentials.create(SMALLBANK_PRIVATE_KEY))
         keyVault.store(CUSTOMER_ACCOUNT, Credentials.create(CUSTOMER_PRIVATE_KEY))
 
         // Stub contract deployment and loading
@@ -143,8 +134,8 @@ class AccountManagementServiceTest {
         deployCall.stub { on { send() } doReturn contractMock }
 
         staticContractMock = mockStatic(SmallBank::class.java).apply {
-            whenever(deploy(web3j, credentials, gasProvider)) doReturn deployCall
-            whenever(load(CONTRACT_ADDRESS, web3j, credentials, gasProvider)) doReturn contractMock
+            whenever(deploy(any(), any<Credentials>(), any())) doReturn deployCall
+            whenever(load(any(), any(), any<Credentials>(), any())) doReturn contractMock
         }
 
         // Stub contract methods
@@ -290,7 +281,6 @@ class AccountManagementServiceTest {
         contractMock.stub {
             on { balance() } doReturn balanceCall
         }
-
         accountRepositoryMock.stub {
             on {
                 findById(CUSTOMER_ACCOUNT)
