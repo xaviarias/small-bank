@@ -56,6 +56,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
 import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.Log
 import org.web3j.protocol.core.methods.response.TransactionReceipt
+import org.web3j.tx.TransactionManager
 import org.web3j.utils.Convert
 import java.math.BigInteger
 import java.time.Clock
@@ -134,8 +135,8 @@ class AccountManagementServiceTest {
         deployCall.stub { on { send() } doReturn contractMock }
 
         staticContractMock = mockStatic(SmallBank::class.java).apply {
-            whenever(deploy(any(), any<Credentials>(), any())) doReturn deployCall
-            whenever(load(any(), any(), any<Credentials>(), any())) doReturn contractMock
+            whenever(deploy(any(), any<TransactionManager>(), any())) doReturn deployCall
+            whenever(load(any(), any(), any<TransactionManager>(), any())) doReturn contractMock
         }
 
         // Stub contract methods

@@ -22,6 +22,9 @@ import org.web3j.crypto.WalletFile
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
+import org.web3j.tx.ChainIdLong
+import org.web3j.tx.RawTransactionManager
+import org.web3j.tx.TransactionManager
 import org.web3j.tx.gas.ContractGasProvider
 import java.math.BigDecimal
 import java.security.SecureRandom
@@ -34,6 +37,9 @@ internal class AccountManagementServiceImpl(
 
     @Value("\${smallbank.ethereum.account}")
     private var ethereumAccount: String? = null,
+
+    @Value("\${smallbank.ethereum.chain-id:#{null}}")
+    private var chainId: Long? = ChainIdLong.NONE,
 
     @Value("\${smallbank.ethereum.contract.address:#{null}}")
     private var contractAddress: String? = null,
@@ -127,11 +133,15 @@ internal class AccountManagementServiceImpl(
         )
     }
 
+    private fun transactionManager(credentials: Credentials): TransactionManager {
+        return RawTransactionManager(web3j, credentials, chainId ?: ChainIdLong.NONE)
+    }
+
     private fun deployContract(): String {
         val credentials = resolveCredentials(ethereumAccount!!)
         return SmallBank.deploy(
             web3j,
-            credentials,
+            transactionManager(credentials),
             gasProvider
         ).send().contractAddress
     }
@@ -143,7 +153,7 @@ internal class AccountManagementServiceImpl(
         return SmallBank.load(
             contractAddress,
             web3j,
-            credentials,
+            transactionManager(credentials),
             gasProvider
         )
     }
