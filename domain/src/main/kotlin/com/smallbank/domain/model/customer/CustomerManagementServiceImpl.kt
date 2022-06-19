@@ -1,6 +1,5 @@
 package com.smallbank.domain.model.customer
 
-import org.springframework.validation.annotation.Validated
 import javax.validation.ConstraintViolationException
 import javax.validation.Valid
 import javax.validation.Validator
@@ -8,7 +7,6 @@ import javax.validation.Validator
 /**
  * Customer management business logic.
  */
-@Validated
 open class CustomerManagementServiceImpl(
     private val customerRepository: CustomerRepository,
     private val validator: Validator
