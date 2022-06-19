@@ -20,6 +20,8 @@ logging:
 # Görli Testnet
 
 spring:
+  main:
+    banner-mode: off
   config:
     activate:
       on-profile: testnet
