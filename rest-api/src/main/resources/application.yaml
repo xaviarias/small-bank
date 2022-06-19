@@ -13,4 +13,26 @@ smallbank:
 
 logging:
   level:
+    org.web3j.protocol: DEBUG
     org.springframework.web: DEBUG
+
+---
+
+# Görli Testnet
+
+spring:
+  config:
+    activate:
+      on-profile: testnet
+
+smallbank:
+  ethereum:
+    url: 'https://eth-goerli.alchemyapi.io/v2/blswUFyXkYK9XVYqgzGXtWa7N4Z8ZmWW'
+    account: '0xfe3b557e8fb62b89f4916b721be55ceb828dbd73'
+    private-key: '0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63'
+    chain-id: 5
+
+logging:
+  level:
+    org.web3j.protocol: DEBUG
+    org.springframework.web: WARN
