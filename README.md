@@ -72,7 +72,6 @@ The Ethereum account is the only mandatory.
 * `smallbank.ethereum.url`: The Ethereum endpoint (defaults to `http://localhost:8545/`).
 * `smallbank.ethereum.account`: The admin account to deploy the initial contract (mandatory).
 * `smallbank.ethereum.chain-id`: A long value defining the Ethereum chain id (defaults to `-1` for `NONE`).
-* `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
 * `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
 
 After building the project, run the commands:
