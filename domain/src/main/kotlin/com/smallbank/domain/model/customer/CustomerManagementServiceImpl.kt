@@ -25,8 +25,9 @@ open class CustomerManagementServiceImpl(
         return customerRepository.update(customer)
     }
 
-    override fun findById(customerId: CustomerId): Customer? {
+    override fun findById(customerId: CustomerId): Customer {
         return customerRepository.findById(customerId)
+            ?: throw NoSuchElementException("No customer found: $customerId")
     }
 
     override fun findAll(): List<Customer> {

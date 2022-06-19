@@ -10,7 +10,7 @@ interface CustomerManagementService {
 
     fun update(customer: Customer): Customer
 
-    fun findById(customerId: CustomerId): Customer?
+    fun findById(customerId: CustomerId): Customer
 
     // TODO Support pagination
     fun findAll(): List<Customer>

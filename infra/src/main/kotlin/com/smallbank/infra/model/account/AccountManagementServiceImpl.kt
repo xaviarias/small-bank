@@ -38,7 +38,7 @@ internal class AccountManagementServiceImpl(
     @Value("\${smallbank.ethereum.account}")
     private var ethereumAccount: String? = null,
 
-    @Value("\${smallbank.ethereum.private-key}")
+    @Value("\${smallbank.ethereum.private-key:#{null}}")
     private var privateKey: String? = null,
 
     @Value("\${smallbank.ethereum.chain-id:${ChainIdLong.NONE}}")
@@ -47,8 +47,8 @@ internal class AccountManagementServiceImpl(
     @Value("\${smallbank.ethereum.contract.address:#{null}}")
     private var contractAddress: String? = null,
 
-    @Value("\${spring.profiles.active}")
-    private var activeProfile: String,
+    @Value("\${spring.profiles.active:#{null}}}")
+    private var activeProfile: String? = null,
 
     private val accountRepository: JpaAccountRepository,
     private val customerRepository: JpaCustomerRepository,
@@ -81,7 +81,7 @@ internal class AccountManagementServiceImpl(
         }
     }
 
-    override fun find(accountId: AccountId): Account {
+    override fun findById(accountId: AccountId): Account {
         return accountRepository.findById(accountId.id).get().toPojo()
     }
 
