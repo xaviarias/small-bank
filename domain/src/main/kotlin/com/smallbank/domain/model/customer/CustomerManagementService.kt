@@ -1,10 +1,12 @@
 package com.smallbank.domain.model.customer
 
+import javax.validation.Valid
+
 /**
  * Customer management application service.
  */
 interface CustomerManagementService {
-    fun create(customer: Customer): Customer
+    fun create(@Valid customer: Customer): Customer
 
     fun update(customer: Customer): Customer
 

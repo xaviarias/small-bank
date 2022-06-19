@@ -6,7 +6,7 @@ import com.smallbank.domain.model.customer.CustomerManagementService
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class CustomerResourceImpl(
+open class CustomerResourceImpl(
     private val customerService: CustomerManagementService
 ) : CustomerResource {
 

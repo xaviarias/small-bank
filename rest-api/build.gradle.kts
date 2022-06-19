@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":smallbank-infra"))
     implementation("org.web3j:core:4.9.2")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.web3j:web3j-unit:4.9.2")

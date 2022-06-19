@@ -1,17 +1,20 @@
 package com.smallbank.domain.model.customer
 
+import org.springframework.validation.annotation.Validated
 import javax.validation.ConstraintViolationException
+import javax.validation.Valid
 import javax.validation.Validator
 
 /**
  * Customer management business logic.
  */
-class CustomerManagementServiceImpl(
+@Validated
+open class CustomerManagementServiceImpl(
     private val customerRepository: CustomerRepository,
     private val validator: Validator
 ) : CustomerManagementService {
 
-    override fun create(customer: Customer): Customer {
+    override fun create(@Valid customer: Customer): Customer {
         customer.validateOrThrow(validator)
         return customerRepository.create(customer)
     }

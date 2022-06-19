@@ -1,14 +1,18 @@
 package com.smallbank.domain.model.customer
 
+import javax.validation.Valid
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 
 data class Customer(
+    @Valid
     val id: CustomerId,
     @Email
     @NotBlank
     val email: String,
+    @Valid
     val name: PersonalName,
+    @Valid
     val address: PersonalAddress
 )
 
