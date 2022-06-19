@@ -38,11 +38,17 @@ internal class AccountManagementServiceImpl(
     @Value("\${smallbank.ethereum.account}")
     private var ethereumAccount: String? = null,
 
+    @Value("\${smallbank.ethereum.private-key}")
+    private var privateKey: String? = null,
+
     @Value("\${smallbank.ethereum.chain-id:${ChainIdLong.NONE}}")
     private var chainId: Long? = null,
 
     @Value("\${smallbank.ethereum.contract.address:#{null}}")
     private var contractAddress: String? = null,
+
+    @Value("\${spring.profiles.active}")
+    private var activeProfile: String,
 
     private val accountRepository: JpaAccountRepository,
     private val customerRepository: JpaCustomerRepository,
@@ -116,8 +122,8 @@ internal class AccountManagementServiceImpl(
      * FIXME Sync database only with delta blocks.
      */
     private fun subscribeToMovements(account: PersistentAccount) {
-        require(ethereumAccount != null) { "No Ethereum account defined!" }
-        val credentials = resolveCredentials(ethereumAccount!!)
+        check(ethereumAccount != null) { "No Ethereum account defined!" }
+        val credentials = resolveCredentials(ethereumAccount!!, true)
 
         loadContract(credentials).accountDepositEventFlowable(EARLIEST, LATEST).subscribe {
             movementRepository.save(it.toEntity(account, clock))
@@ -127,10 +133,17 @@ internal class AccountManagementServiceImpl(
         }
     }
 
-    private fun resolveCredentials(account: String): Credentials {
-        return keyVault.resolve(account) ?: throw IllegalStateException(
-            "Account credentials not found in key vault: $account"
-        )
+    private fun resolveCredentials(account: String, admin: Boolean = false): Credentials {
+        return if (admin && activeProfile == "testnet") {
+            check(privateKey != null) {
+                "Private key must be provided for Ethereum Testnet"
+            }
+            Credentials.create(privateKey)
+        } else {
+            keyVault.resolve(account) ?: throw IllegalStateException(
+                "Account credentials not found in key vault: $account"
+            )
+        }
     }
 
     private fun transactionManager(credentials: Credentials): TransactionManager {
@@ -138,7 +151,7 @@ internal class AccountManagementServiceImpl(
     }
 
     private fun deployContract(): String {
-        val credentials = resolveCredentials(ethereumAccount!!)
+        val credentials = resolveCredentials(ethereumAccount!!, true)
         return SmallBank.deploy(
             web3j,
             transactionManager(credentials),
