@@ -27,7 +27,7 @@ class AccountResourceImpl(
         accountId: String,
         amount: AccountAmountDto
     ) {
-        return accountService.deposit(AccountId(accountId), amount.amount)
+        accountService.deposit(AccountId(accountId), amount.amount)
     }
 
     override fun withdraw(
@@ -35,7 +35,7 @@ class AccountResourceImpl(
         accountId: String,
         amount: AccountAmountDto
     ) {
-        return accountService.withdraw(AccountId(accountId), amount.amount)
+        accountService.withdraw(AccountId(accountId), amount.amount)
     }
 
     override fun balance(
@@ -50,7 +50,7 @@ class AccountResourceImpl(
         accountId: String,
         transferDto: AccountTransferDto
     ) {
-        return accountService.transfer(
+        accountService.transfer(
             AccountId(accountId),
             AccountId(transferDto.toAccount),
             transferDto.amount
