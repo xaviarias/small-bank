@@ -13,6 +13,9 @@ open class CustomerManagementServiceImpl(
 ) : CustomerManagementService {
 
     override fun create(@Valid customer: Customer): Customer {
+        require(customerRepository.findById(customer.id) == null) {
+            "Customer with id ${customer.id} already exists!"
+        }
         customer.validateOrThrow(validator)
         return customerRepository.create(customer)
     }
