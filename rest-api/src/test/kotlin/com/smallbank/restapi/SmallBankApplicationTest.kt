@@ -1,13 +1,9 @@
 package com.smallbank.restapi
 
-import com.smallbank.domain.model.account.Account
 import com.smallbank.domain.model.account.Account.AccountType
-import com.smallbank.domain.model.account.AccountId
-import com.smallbank.domain.model.customer.Customer
-import com.smallbank.domain.model.customer.CustomerId
-import com.smallbank.domain.model.customer.PersonalAddress
-import com.smallbank.domain.model.customer.PersonalName
 import com.smallbank.infra.ethereum.EthereumKeyVault
+import com.smallbank.restapi.model.account.AccountDto
+import com.smallbank.restapi.model.customer.CustomerDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -52,21 +48,21 @@ class SmallBankApplicationTest {
     @Autowired
     private lateinit var template: TestRestTemplate
 
-    private val customer = Customer(
-        CustomerId(UUID.randomUUID().toString()),
+    private val customer = CustomerDto(
+        UUID.randomUUID().toString(),
         "john.doe@smail.com",
-        PersonalName("John", "Doe"),
-        PersonalAddress(
-            "Baker Street",
-            "221B",
-            "NW1",
-            "London",
-            "GB"
-        )
+        "John",
+        "Doe",
+        "Baker Street",
+        "221B",
+        "NW1",
+        "London",
+        "GB"
+
     )
 
-    private val account = Account(
-        AccountId("0x0"),
+    private val account = AccountDto(
+        "0x0",
         customer.id,
         AccountType.ETHEREUM
     )
@@ -88,7 +84,7 @@ class SmallBankApplicationTest {
     @Order(2)
     fun `create customer`() {
         val newCustomer = template.postForEntity(
-            "/customers", customer, Customer::class.java
+            "/customers", customer, CustomerDto::class.java
         )
         assertEquals(customer, newCustomer.body!!)
     }
@@ -111,7 +107,7 @@ class SmallBankApplicationTest {
         val accounts = template.getForEntity(
             "/customers/{customerId}/accounts",
             List::class.java,
-            customer.id.id
+            customer.id
         )
         assertTrue(accounts.body!!.isEmpty())
     }
@@ -121,8 +117,8 @@ class SmallBankApplicationTest {
     fun `create account`() {
         val newAccount = template.postForEntity(
             "/customers/{customerId}/accounts",
-            null, Account::class.java,
-            customer.id.id
+            null, AccountDto::class.java,
+            customer.id
         ).body!!
         assertEquals(account.copy(id = newAccount.id), newAccount)
     }
@@ -134,7 +130,7 @@ class SmallBankApplicationTest {
             "/customers/{customerId}/accounts",
             HttpMethod.GET, null,
             ACCOUNT_LIST,
-            customer.id.id
+            customer.id
         ).body!!
         with(accounts) {
             assertTrue(size == 1)
@@ -145,7 +141,7 @@ class SmallBankApplicationTest {
     }
 
     companion object {
-        private val CUSTOMER_LIST = object : ParameterizedTypeReference<List<Customer>>() {}
-        private val ACCOUNT_LIST = object : ParameterizedTypeReference<List<Account>>() {}
+        private val CUSTOMER_LIST = object : ParameterizedTypeReference<List<CustomerDto>>() {}
+        private val ACCOUNT_LIST = object : ParameterizedTypeReference<List<AccountDto>>() {}
     }
 }

@@ -1,6 +1,5 @@
 package com.smallbank.restapi.model.customer
 
-import com.smallbank.domain.model.customer.Customer
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,11 +15,11 @@ import javax.validation.Valid
 interface CustomerResource {
 
     @PostMapping
-    fun create(@Valid @RequestBody customer: Customer): Customer
+    fun create(@Valid @RequestBody customer: CustomerDto): CustomerDto
 
     @GetMapping
-    fun findAll(): List<Customer>
+    fun findAll(): List<CustomerDto>
 
     @GetMapping("{id}")
-    fun findById(@PathVariable id: String): Customer
+    fun findById(@PathVariable id: String): CustomerDto
 }
