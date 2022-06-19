@@ -117,6 +117,14 @@ internal class AccountManagementServiceImpl(
         return movementRepository.findByAccountId(accountId.id).map { it.toPojo() }
     }
 
+    override fun transfer(accountIdFrom: AccountId, accountIdTo: AccountId, amount: BigDecimal) {
+        accountRepository.findById(accountIdFrom.id).get()
+        accountRepository.findById(accountIdTo.id).get()
+
+        val credentials = resolveCredentials(accountIdFrom.id)
+        loadContract(credentials).transfer(accountIdTo.id, amount.toBigInteger())
+    }
+
     /**
      * FIXME Filter events by account id.
      * FIXME Sync database only with delta blocks.

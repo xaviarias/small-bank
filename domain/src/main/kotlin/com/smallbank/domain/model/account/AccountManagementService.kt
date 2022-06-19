@@ -14,4 +14,10 @@ interface AccountManagementService {
     fun withdraw(accountId: AccountId, amount: BigDecimal)
     fun balance(accountId: AccountId): BigDecimal
     fun movements(accountId: AccountId): List<AccountMovement>
+
+    fun transfer(
+        accountIdFrom: AccountId,
+        accountIdTo: AccountId,
+        amount: BigDecimal
+    )
 }
