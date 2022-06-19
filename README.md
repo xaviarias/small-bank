@@ -75,9 +75,18 @@ The Ethereum account is the only mandatory.
 * `smallbank.ethereum.private-key`: The credentials for the admin account (for tests only).
 * `smallbank.ethereum.contract.address`: If you want to use an already deployed contract (optional).
 
-After building the project, run the commands:
+After building the project, run those commands to start the web server using **Görli Testnet**:
 
 ```
 cd rest-api
-./gradlew bootRun 
+../gradlew bootRunTestnet
 ```
+
+You will find the Swagger UI page at this location:
+[`http://localhost:8080/swagger-ui/index.html`](http://localhost:8080/swagger-ui/index.html)
+
+## TODO
+
+* Fix Java Beans Validation on services and endpoints.
+* Fix account deposit, transfer and withdrawal on Testnet.
+* Integrate with an external persistent key vault (e.g. Hashicorp Vault).

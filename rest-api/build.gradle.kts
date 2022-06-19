@@ -30,3 +30,14 @@ dependencies {
     testImplementation("org.web3j:web3j-evm:4.9.2")
     runtimeOnly("com.h2database:h2:2.1.212")
 }
+
+tasks.register("bootRunTestnet") {
+    group = "application"
+    description = "Runs this project in Testnet"
+    doFirst {
+        tasks.bootRun.configure {
+            systemProperty("spring.profiles.active", "testnet")
+        }
+    }
+    finalizedBy("bootRun")
+}
