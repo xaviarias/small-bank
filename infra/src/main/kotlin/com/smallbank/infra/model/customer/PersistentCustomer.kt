@@ -3,6 +3,7 @@ package com.smallbank.infra.model.customer
 import com.smallbank.infra.model.account.PersistentAccount
 import javax.persistence.Access
 import javax.persistence.AccessType
+import javax.persistence.Column
 import javax.persistence.Embeddable
 import javax.persistence.Embedded
 import javax.persistence.Entity
@@ -16,6 +17,7 @@ internal data class PersistentCustomer(
     @Id
     val id: String?,
 
+    @Column(unique = true)
     val email: String,
 
     @Embedded
