@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.Keys
 import org.web3j.crypto.Wallet
-import org.web3j.crypto.WalletFile
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName.EARLIEST
 import org.web3j.protocol.core.DefaultBlockParameterName.LATEST
@@ -26,6 +25,7 @@ import org.web3j.tx.ChainIdLong
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.TransactionManager
 import org.web3j.tx.gas.ContractGasProvider
+import org.web3j.utils.Numeric
 import java.math.BigDecimal
 import java.security.SecureRandom
 import java.time.Clock
@@ -68,17 +68,19 @@ internal class AccountManagementServiceImpl(
             throw IllegalStateException("Already existing account for customer: $customerId")
         }
 
+        // FIXME Set wallet password
         val ecKeyPair = Keys.createEcKeyPair(random)
-        val wallet: WalletFile = Wallet.createLight("", ecKeyPair)
+        val address = Wallet.createLight("", ecKeyPair).let {
+            Numeric.prependHexPrefix(it.address)
+        }
 
-        keyVault.store(wallet.address, Credentials.create(ecKeyPair))
-
-        val accountId = AccountId(wallet.address)
+        val accountId = AccountId(address)
         val account = Account(accountId, customerId, AccountType.ETHEREUM).toEntity(customer)
 
-        return accountRepository.save(account).toPojo().also {
-            subscribeToMovements(account)
-        }
+        subscribeToMovements(account)
+        keyVault.store(address, Credentials.create(ecKeyPair))
+
+        return accountRepository.save(account).toPojo()
     }
 
     override fun findById(accountId: AccountId): Account {
