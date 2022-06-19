@@ -20,11 +20,11 @@ Items that are important:
 
 ## Dependencies
 
+* JVM 11
 * Web3j
 * Kotlin
-* Java 11
 * Spring Boot
-* Docker (to run tests)
+* Docker (to run tests with Besu)
 
 ## Design and architecture
 
