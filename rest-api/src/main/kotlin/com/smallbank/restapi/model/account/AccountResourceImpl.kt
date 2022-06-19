@@ -4,7 +4,6 @@ import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountManagementService
 import com.smallbank.domain.model.customer.CustomerId
 import org.springframework.web.bind.annotation.RestController
-import java.math.BigDecimal
 
 @RestController
 class AccountResourceImpl(
@@ -23,19 +22,34 @@ class AccountResourceImpl(
         return accountService.findByCustomer(CustomerId(customerId)).map { it.toDto() }
     }
 
-    override fun deposit(customerId: String, accountId: String, amount: BigDecimal) {
-        return accountService.deposit(AccountId(accountId), amount)
+    override fun deposit(
+        customerId: String,
+        accountId: String,
+        amount: AccountAmountDto
+    ) {
+        return accountService.deposit(AccountId(accountId), amount.amount)
     }
 
-    override fun withdraw(customerId: String, accountId: String, amount: BigDecimal) {
-        return accountService.withdraw(AccountId(accountId), amount)
+    override fun withdraw(
+        customerId: String,
+        accountId: String,
+        amount: AccountAmountDto
+    ) {
+        return accountService.withdraw(AccountId(accountId), amount.amount)
     }
 
-    override fun balance(customerId: String, accountId: String): AccountBalanceDto {
-        return AccountBalanceDto(accountService.balance(AccountId(accountId)))
+    override fun balance(
+        customerId: String,
+        accountId: String
+    ): AccountAmountDto {
+        return AccountAmountDto(accountService.balance(AccountId(accountId)))
     }
 
-    override fun transfer(customerId: String, accountId: String, transferDto: AccountTransferDto) {
+    override fun transfer(
+        customerId: String,
+        accountId: String,
+        transferDto: AccountTransferDto
+    ) {
         return accountService.transfer(
             AccountId(accountId),
             AccountId(transferDto.toAccount),

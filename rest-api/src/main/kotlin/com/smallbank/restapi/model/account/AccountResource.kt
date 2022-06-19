@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
-import java.math.BigDecimal
 import javax.validation.Valid
 
 @ResponseBody
@@ -34,21 +33,21 @@ interface AccountResource {
     fun deposit(
         @PathVariable("customerId") customerId: String,
         @PathVariable("accountId") accountId: String,
-        amount: BigDecimal
+        @RequestBody amount: AccountAmountDto
     )
 
     @PutMapping("{accountId}/withdraw")
     fun withdraw(
         @PathVariable("customerId") customerId: String,
         @PathVariable("accountId") accountId: String,
-        amount: BigDecimal
+        @RequestBody amount: AccountAmountDto
     )
 
     @GetMapping("{accountId}/balance")
     fun balance(
         @PathVariable("customerId") customerId: String,
         @PathVariable("accountId") accountId: String
-    ): AccountBalanceDto
+    ): AccountAmountDto
 
     @PutMapping("{accountId}/transfer")
     fun transfer(

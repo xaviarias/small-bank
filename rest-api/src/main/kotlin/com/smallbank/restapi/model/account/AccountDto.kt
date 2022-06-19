@@ -17,9 +17,11 @@ data class AccountTransferDto(
     val amount: BigDecimal
 )
 
-data class AccountBalanceDto(
-    val balance: BigDecimal
-)
+data class AccountAmountDto(
+    val amount: BigDecimal
+) {
+    val currency: String = "ETH"
+}
 
 internal fun AccountDto.toDomain() = Account(
     AccountId(id),
