@@ -2,7 +2,6 @@ package com.smallbank.restapi.model.account
 
 import com.smallbank.domain.model.account.AccountId
 import com.smallbank.domain.model.account.AccountManagementService
-import com.smallbank.domain.model.account.AccountMovement
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -13,7 +12,7 @@ class AccountMovementResourceImpl(
     override fun findAll(
         customerId: String,
         accountId: String
-    ): List<AccountMovement> {
-        return accountService.movements(AccountId(accountId))
+    ): List<AccountMovementDto> {
+        return accountService.movements(AccountId(accountId)).map { it.toDto() }
     }
 }
