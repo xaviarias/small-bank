@@ -47,7 +47,7 @@ internal class AccountManagementServiceImpl(
     @Value("\${smallbank.ethereum.contract.address:#{null}}")
     private var contractAddress: String? = null,
 
-    @Value("\${spring.profiles.active:#{null}}}")
+    @Value("\${spring.profiles.active:#{null}}")
     private var activeProfile: String? = null,
 
     private val accountRepository: JpaAccountRepository,
