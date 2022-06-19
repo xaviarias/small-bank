@@ -38,8 +38,8 @@ internal class AccountManagementServiceImpl(
     @Value("\${smallbank.ethereum.account}")
     private var ethereumAccount: String? = null,
 
-    @Value("\${smallbank.ethereum.chain-id:#{null}}")
-    private var chainId: Long? = ChainIdLong.NONE,
+    @Value("\${smallbank.ethereum.chain-id:${ChainIdLong.NONE}}")
+    private var chainId: Long? = null,
 
     @Value("\${smallbank.ethereum.contract.address:#{null}}")
     private var contractAddress: String? = null,
