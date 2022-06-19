@@ -87,6 +87,7 @@ You will find the Swagger UI page at this location:
 
 ## TODO
 
-* Fix Java Beans Validation on services and endpoints.
+* Fix Java Bean Validation on services and endpoints.
 * Fix account deposit, transfer and withdrawal on Testnet.
 * Integrate with an external persistent key vault (e.g. Hashicorp Vault).
+* Implement missing unit and integration tests. 
