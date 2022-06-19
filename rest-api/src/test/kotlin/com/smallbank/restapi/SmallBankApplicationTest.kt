@@ -43,6 +43,9 @@ class SmallBankApplicationTest {
     @Value("\${smallbank.ethereum.account}")
     private var ethereumAccount: String? = null
 
+    @Value("\${smallbank.ethereum.private-key}")
+    private var privateKey: String? = null
+
     @Autowired
     private lateinit var keyVault: EthereumKeyVault
 
@@ -71,7 +74,7 @@ class SmallBankApplicationTest {
     @BeforeAll
     fun setUp() {
         // Start with the Ethereum account key pair
-        keyVault.store(ethereumAccount!!, Credentials.create(SMALLBANK_PRIVATE_KEY))
+        keyVault.store(ethereumAccount!!, Credentials.create(privateKey!!))
     }
 
     @Test
@@ -144,7 +147,5 @@ class SmallBankApplicationTest {
     companion object {
         private val CUSTOMER_LIST = object : ParameterizedTypeReference<List<Customer>>() {}
         private val ACCOUNT_LIST = object : ParameterizedTypeReference<List<Account>>() {}
-
-        const val SMALLBANK_PRIVATE_KEY = "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63"
     }
 }
