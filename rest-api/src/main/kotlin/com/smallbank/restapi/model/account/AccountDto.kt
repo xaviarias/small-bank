@@ -18,7 +18,6 @@ data class AccountTransferDto(
 )
 
 data class AccountBalanceDto(
-    val account: String,
     val balance: BigDecimal
 )
 

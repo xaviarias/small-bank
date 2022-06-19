@@ -32,7 +32,7 @@ class AccountResourceImpl(
     }
 
     override fun balance(customerId: String, accountId: String): AccountBalanceDto {
-        return AccountBalanceDto(accountId, accountService.balance(AccountId(accountId)))
+        return AccountBalanceDto(accountService.balance(AccountId(accountId)))
     }
 
     override fun transfer(customerId: String, accountId: String, transferDto: AccountTransferDto) {
