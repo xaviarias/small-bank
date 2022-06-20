@@ -2,6 +2,7 @@ package com.smallbank.restapi
 
 import com.smallbank.domain.model.account.Account.AccountType
 import com.smallbank.infra.ethereum.EthereumKeyVault
+import com.smallbank.restapi.model.account.AccountAmountDto
 import com.smallbank.restapi.model.account.AccountDto
 import com.smallbank.restapi.model.customer.CustomerDto
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -138,6 +139,40 @@ class SmallBankApplicationTest {
                 assertTrue(contains(account.copy(id = this)))
             }
         }
+    }
+
+    @Test
+    @Order(7)
+    fun deposit() {
+        val account = template.exchange(
+            "/customers/{customerId}/accounts",
+            HttpMethod.GET, null,
+            ACCOUNT_LIST,
+            customer.id
+        ).body!!.first()
+        template.put(
+            "/customers/{customerId}/accounts/{accountId}/deposit",
+            AccountAmountDto(1.toBigDecimal()),
+            customer.id,
+            account.id
+        )
+    }
+
+    @Test
+    @Order(8)
+    fun withdraw() {
+        val account = template.exchange(
+            "/customers/{customerId}/accounts",
+            HttpMethod.GET, null,
+            ACCOUNT_LIST,
+            customer.id
+        ).body!!.first()
+        template.put(
+            "/customers/{customerId}/accounts/{accountId}/withdraw",
+            AccountAmountDto(1.toBigDecimal()),
+            customer.id,
+            account.id
+        )
     }
 
     companion object {
